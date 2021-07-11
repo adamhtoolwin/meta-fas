@@ -1,0 +1,44 @@
+#device: &device cpu
+debug: False
+no_cuda: True
+gpu: 2
+
+show_imgs: False
+
+image_size: 224  # size of input image
+cue_log_every: 500  # will log cues every cue_log_every batches. If 0, than won't log
+
+mean:
+  r: 0
+  g: 0
+  b: 0
+std:
+  r: 1
+  g: 1
+  b: 1
+
+#mean:
+#  r: 0.485
+#  g: 0.456
+#  b: 0.406
+#std:
+#  r: 0.229
+#  g: 0.224
+#  b: 0.225
+
+batch_size: 32  # batch size for both validation and train dataloader
+num_workers_train: 0  # param for training dataloader
+num_workers_val: 0  # param for validation dataloader
+log_dir: "logs/"
+max_epochs: 30
+
+# meta-learning hyperparameters
+ways: 5
+shots: 1
+tasks_per_step: 32
+fast_adaption_steps: 5
+iterations: 1000
+lr: 0.005
+maml_lr: 0.01
+seed: 1
+download_location: "/tmp/mnist"
