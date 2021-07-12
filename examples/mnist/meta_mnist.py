@@ -22,7 +22,7 @@ os.environ['https_proxy'] = 'http://192.41.170.23:3128'
 
 def get_latest_version(root_dir: str):
     last_version = 1
-    directories = glob.glob(root_dir + "/*/")
+    directories = glob.glob(root_dir + "/version_*/")
     for directory in directories:
         version = int(directory.split("/")[-2].split("_")[-1])
         if version >= last_version:
