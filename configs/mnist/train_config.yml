@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
-no_cuda: True
-gpu: 2
+no_cuda: False
+gpu: 0
 
 show_imgs: False
 

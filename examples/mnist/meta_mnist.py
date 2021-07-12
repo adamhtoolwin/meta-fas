@@ -12,6 +12,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import MNIST
+from torch.utils.tensorboard import SummaryWriter
 
 import learn2learn as l2l
 
@@ -56,7 +57,7 @@ def accuracy(predictions, targets):
     return acc.item()
 
 
-def main(lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5, device=torch.device("cpu"),
+def main(weights_directory, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5, device=torch.device("cpu"),
          download_location='~/data'):
     transformations = transforms.Compose([
         transforms.ToTensor(),
@@ -118,12 +119,18 @@ def main(lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5
 
         iteration_error /= tps
         iteration_acc /= tps
+
+        writer.add_scalar('Loss (iteration)', iteration_error, iteration)
+        writer.add_scalar('Accuracy', iteration_acc, iteration)
+
         print('Loss : {:.3f} Acc : {:.3f}'.format(iteration_error.item(), iteration_acc))
 
         # Take the meta-learning step
         opt.zero_grad()
         iteration_error.backward()
         opt.step()
+
+        torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
 
 
 if __name__ == '__main__':
@@ -161,19 +168,30 @@ if __name__ == '__main__':
     with open(version_directory + '/configs.yml', 'w') as outfile:
         yaml.dump(configs, outfile, default_flow_style=False)
 
+    # ========================= End of DevOps ==========================
+    # ========================= Start of ML ==========================
+
     use_cuda = not configs['no_cuda'] and torch.cuda.is_available()
 
     random.seed(configs['seed'])
     np.random.seed(configs['seed'])
     torch.manual_seed(configs['seed'])
     if use_cuda:
-        torch.cuda.manual_seed(configs['seed)'])
+        torch.cuda.manual_seed(configs['seed'])
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
     device = torch.device("cuda:" + str(configs['gpu']) if use_cuda else "cpu")
 
-    main(lr=configs['lr'],
+    print("Using", device)
+    print("Version: ", version)
+    print("Debug: ", debug)
+
+    writer = SummaryWriter(log_dir=version_directory)
+
+    main(weights_directory=weights_directory,
+         writer=writer,
+         lr=configs['lr'],
          maml_lr=configs['maml_lr'],
          iterations=configs['iterations'],
          ways=configs['ways'],
