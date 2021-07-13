@@ -58,12 +58,14 @@ class Dataset(torch.utils.data.Dataset):
         face_detector: dict = None,
         with_labels: bool = True,
         bookkeeping_path: str = None,
+        train: bool = True
     ):
         self.df = df.sample(frac=1).reset_index(drop=True)
         self.root = root
         self.transforms = transforms
         self.with_labels = with_labels
         self.face_extractor = None
+
         self._bookkeeping_path = bookkeeping_path
 
         if face_detector is not None:

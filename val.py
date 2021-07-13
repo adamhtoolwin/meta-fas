@@ -54,30 +54,34 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     df = pd.read_csv(configs['train_df'])
 
-    train_dataset = Dataset(
+    dataset = Dataset(
         df, configs['dataset_root'], transforms, face_detector=None,
-        bookkeeping_path=configs['bookkeeping_path']+"bookkeeping_train"
+        bookkeeping_path=configs['bookkeeping_path'],
+        # bookkeeping_path = configs['bookkeeping_path'] + "bookkeeping_" + configs['train_df'].split("/")[-1]
     )
 
     infile = open(configs['indices_to_labels'], 'rb')
     indices_to_labels = pickle.load(infile)
     infile.close()
 
-    meta_train = l2l.data.MetaDataset(train_dataset)
+    meta_test = l2l.data.MetaDataset(dataset)
 
-    train_tasks = l2l.data.TaskDataset(meta_train,
+    val_tasks = l2l.data.TaskDataset(meta_test,
                                        task_transforms=[
-                                            l2l.data.transforms.NWays(meta_train, ways),
-                                            l2l.data.transforms.KShots(meta_train, shots + 5, replacement=True),
-                                            l2l.data.transforms.LoadData(meta_train),
-                                            l2l.data.transforms.RemapLabels(meta_train),
-                                            l2l.data.transforms.ConsecutiveLabels(meta_train),
+                                            l2l.data.transforms.NWays(meta_test, ways),
+                                            l2l.data.transforms.KShots(meta_test, shots + 5, replacement=True),
+                                            l2l.data.transforms.LoadData(meta_test),
+                                            l2l.data.transforms.RemapLabels(meta_test),
+                                            l2l.data.transforms.ConsecutiveLabels(meta_test),
                                        ],
                                        num_tasks=10000)
 
     model = ResNet18Classifier(pretrained=False)
     model.to(device)
     meta_model = l2l.algorithms.MAML(model, lr=maml_lr)
+
+    meta_model.load_state_dict(torch.load(configs['weights']))
+
     opt = optim.Adam(meta_model.parameters(), lr=lr)
     loss_func = nn.CrossEntropyLoss()
 
@@ -86,7 +90,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         iteration_acc = 0.0
         for _ in range(tps):
             learner = meta_model.clone()
-            train_task = train_tasks.sample()
+            train_task = val_tasks.sample()
             data, labels = train_task
             data = data.to(device)
             labels = labels.to(device)
@@ -124,12 +128,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         print('Loss : {:.3f} Acc : {:.3f}'.format(iteration_error.item(), iteration_acc))
 
-        # Take the meta-learning step
-        opt.zero_grad()
-        iteration_error.backward()
-        opt.step()
-
-        torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
+        # # Take the meta-learning step
+        # opt.zero_grad()
+        # iteration_error.backward()
+        # opt.step()
 
 
 if __name__ == '__main__':
@@ -146,26 +148,16 @@ if __name__ == '__main__':
     root_dir = os.getcwd()
     log_dir = configs['log_dir']
     log_dir = os.path.join(root_dir, log_dir)
-
-    version = get_latest_version(log_dir)
-
-    version_directory = log_dir + "version_" + str(version)
-    if not os.path.isdir(version_directory):
-        os.makedirs(version_directory)
-
-    weights_directory = version_directory + "/weights/"
-    if not os.path.isdir(weights_directory):
-        os.makedirs(weights_directory)
+    if not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
 
     debug = args.debug
 
     start = datetime.datetime.now()
     configs['start'] = start
-    configs['version'] = version
     configs['debug'] = debug
-    configs['weights_directory'] = weights_directory
 
-    with open(version_directory + '/configs.yml', 'w') as outfile:
+    with open(log_dir + '/configs.yml', 'w') as outfile:
         yaml.dump(configs, outfile, default_flow_style=False)
 
     # ========================= End of DevOps ==========================
@@ -184,10 +176,9 @@ if __name__ == '__main__':
     device = torch.device("cuda:" + str(configs['gpu']) if use_cuda else "cpu")
 
     print("Using", device)
-    print("Version: ", version)
     print("Debug: ", debug)
 
-    writer = SummaryWriter(log_dir=version_directory)
+    writer = SummaryWriter(log_dir=log_dir)
 
     main(configs=configs,
          writer=writer,
