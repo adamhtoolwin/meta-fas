@@ -5,6 +5,7 @@ import yaml
 import datetime
 import glob
 import pickle
+import math
 
 import pandas as pd
 import numpy as np
@@ -17,7 +18,7 @@ from torchvision.datasets import MNIST
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets.datasets import Dataset, get_train_augmentations, get_test_augmentations
-from models.scan import SCAN
+from models.scan import SCAN, ResNet18Classifier
 
 import learn2learn as l2l
 
@@ -54,78 +55,84 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     df = pd.read_csv(configs['train_df'])
 
     train_dataset = Dataset(
-        df, configs['dataset_root'], transforms, face_detector=None
+        df, configs['dataset_root'], transforms, face_detector=None, bookkeeping_path=configs['bookkeeping_path']
     )
 
     infile = open(configs['indices_to_labels'], 'rb')
     indices_to_labels = pickle.load(infile)
     infile.close()
 
-    meta_train = l2l.data.MetaDataset(train_dataset, indices_to_labels=indices_to_labels)
+    meta_train = l2l.data.MetaDataset(train_dataset)
 
     train_tasks = l2l.data.TaskDataset(meta_train,
                                        task_transforms=[
                                             l2l.data.transforms.NWays(meta_train, ways),
-                                            l2l.data.transforms.KShots(meta_train, 2*shots),
+                                            l2l.data.transforms.KShots(meta_train, shots + 5, replacement=True),
                                             l2l.data.transforms.LoadData(meta_train),
+                                            l2l.data.transforms.RemapLabels(meta_train),
+                                            l2l.data.transforms.ConsecutiveLabels(meta_train),
                                        ],
-                                       num_tasks=1000)
+                                       num_tasks=10000)
 
-    model = SCAN()
+    model = ResNet18Classifier(pretrained=False)
     model.to(device)
     meta_model = l2l.algorithms.MAML(model, lr=maml_lr)
     opt = optim.Adam(meta_model.parameters(), lr=lr)
-    loss_func = nn.NLLLoss(reduction='mean')
+    loss_func = nn.CrossEntropyLoss()
 
-    # for iteration in range(iterations):
-    #     iteration_error = 0.0
-    #     iteration_acc = 0.0
-    #     for _ in range(tps):
-    #         learner = meta_model.clone()
-    #         train_task = train_tasks.sample()
-    #         data, labels = train_task
-    #         data = data.to(device)
-    #         labels = labels.to(device)
-    #
-    #         # Separate data into adaptation/evalutation sets
-    #         adaptation_indices = np.zeros(data.size(0), dtype=bool)
-    #         adaptation_indices[np.arange(shots*ways) * 2] = True
-    #         evaluation_indices = torch.from_numpy(~adaptation_indices)
-    #         adaptation_indices = torch.from_numpy(adaptation_indices)
-    #         adaptation_data, adaptation_labels = data[adaptation_indices], labels[adaptation_indices]
-    #         evaluation_data, evaluation_labels = data[evaluation_indices], labels[evaluation_indices]
-    #
-    #         # Fast Adaptation
-    #         for step in range(fas):
-    #             train_error = loss_func(learner(adaptation_data), adaptation_labels)
-    #             learner.adapt(train_error)
-    #
-    #         # Compute validation loss
-    #         predictions = learner(evaluation_data)
-    #         valid_error = loss_func(predictions, evaluation_labels)
-    #         valid_error /= len(evaluation_data)
-    #         valid_accuracy = accuracy(predictions, evaluation_labels)
-    #         iteration_error += valid_error
-    #         iteration_acc += valid_accuracy
-    #
-    #     iteration_error /= tps
-    #     iteration_acc /= tps
-    #
-    #     writer.add_scalar('Loss (iteration)', iteration_error, iteration)
-    #     writer.add_scalar('Accuracy', iteration_acc, iteration)
-    #
-    #     print('Loss : {:.3f} Acc : {:.3f}'.format(iteration_error.item(), iteration_acc))
-    #
-    #     # Take the meta-learning step
-    #     opt.zero_grad()
-    #     iteration_error.backward()
-    #     opt.step()
-    #
-    #     torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
+    for iteration in range(iterations):
+        iteration_error = 0.0
+        iteration_acc = 0.0
+        for _ in range(tps):
+            learner = meta_model.clone()
+            train_task = train_tasks.sample()
+            data, labels = train_task
+            data = data.to(device)
+            labels = labels.to(device)
+
+            # Separate data into adaptation/evalutation sets
+            adaptation_indices = np.zeros(data.size(0), dtype=bool)
+            adaptation_indices[:shots] = True
+            length = adaptation_indices.shape[0]
+            adaptation_indices[math.floor(length/2):math.floor(length/2 + shots)] = True
+
+            # adaptation_indices[np.arange(shots*ways) * 2] = True
+            evaluation_indices = torch.from_numpy(~adaptation_indices)
+            adaptation_indices = torch.from_numpy(adaptation_indices)
+            adaptation_data, adaptation_labels = data[adaptation_indices], labels[adaptation_indices]
+            evaluation_data, evaluation_labels = data[evaluation_indices], labels[evaluation_indices]
+
+            # Fast Adaptation
+            for step in range(fas):
+                train_error = loss_func(learner(adaptation_data), adaptation_labels)
+                learner.adapt(train_error)
+
+            # Compute validation loss
+            predictions = learner(evaluation_data)
+            valid_error = loss_func(predictions, evaluation_labels)
+            valid_error /= len(evaluation_data)
+            valid_accuracy = accuracy(predictions, evaluation_labels)
+            iteration_error += valid_error
+            iteration_acc += valid_accuracy
+
+        iteration_error /= tps
+        iteration_acc /= tps
+
+        writer.add_scalar('Loss (iteration)', iteration_error, iteration)
+        writer.add_scalar('Accuracy', iteration_acc, iteration)
+
+        print('Loss : {:.3f} Acc : {:.3f}'.format(iteration_error.item(), iteration_acc))
+
+        # Take the meta-learning step
+        opt.zero_grad()
+        iteration_error.backward()
+        opt.step()
+
+        torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Learn2Learn MNIST Example')
+    parser = argparse.ArgumentParser(description='Oulu Training')
 
     parser.add_argument("-c", "--config", required=True, help="Config file path.")
     parser.add_argument("-d", "--debug", required=False, type=bool, help="Checkpoint file path.", default=False)

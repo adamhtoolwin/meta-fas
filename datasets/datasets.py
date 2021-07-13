@@ -57,12 +57,15 @@ class Dataset(torch.utils.data.Dataset):
         transforms: Callable,
         face_detector: dict = None,
         with_labels: bool = True,
+        bookkeeping_path: str = None,
     ):
         self.df = df.sample(frac=1).reset_index(drop=True)
         self.root = root
         self.transforms = transforms
         self.with_labels = with_labels
         self.face_extractor = None
+        self._bookkeeping_path = bookkeeping_path
+
         if face_detector is not None:
             face_detector["keep_all"] = True
             face_detector["post_process"] = False

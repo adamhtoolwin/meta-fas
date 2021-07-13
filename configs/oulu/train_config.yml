@@ -35,13 +35,14 @@ max_epochs: 30
 # meta-learning hyperparameters
 ways: 2
 shots: 1
-tasks_per_step: 32
+tasks_per_step: 8
 fast_adaption_steps: 5
 iterations: 1000
 lr: 0.005
-maml_lr: 0.01
+maml_lr: 0.001
 seed: 1
 
 train_df: "/root/datasets/oulu/train.csv"
 dataset_root: "/root/datasets/oulu"
 indices_to_labels: "datasets/indices_to_labels"
+bookkeeping_path: "datasets/bookkeeping"
