@@ -42,13 +42,13 @@ lr: 0.005
 maml_lr: 0.001
 seed: 1
 
-train_df: "/root/datasets/siwm/test_labels_inverted.csv"
-dataset_root: "/root/datasets/siwm"
-indices_to_labels: "datasets/indices_to_labels"
-bookkeeping_path: "datasets/bookkeeping_siwm_test"
-weights: "logs/oulu/5-shot/version_1/weights/epoch_5000.pth"
-
-#train_df: "/root/datasets/oulu/train.csv"
-#dataset_root: "/root/datasets/oulu"
+#train_df: "/root/datasets/siwm/test_labels_inverted.csv"
+#dataset_root: "/root/datasets/siwm"
 #indices_to_labels: "datasets/indices_to_labels"
-#bookkeeping_path: "datasets/bookkeeping_oulu"
+#bookkeeping_path: "datasets/bookkeeping_siwm_test"
+
+train_df: "/root/datasets/oulu/test.csv"
+dataset_root: "/root/datasets/oulu"
+indices_to_labels: "datasets/indices_to_labels"
+bookkeeping_path: "datasets/bookkeeping_oulu_test"
+weights: "logs/oulu/5-shot/version_1/weights/epoch_5000.pth"

@@ -19,6 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from datasets.datasets import Dataset, get_train_augmentations, get_test_augmentations
 from models.scan import SCAN, ResNet18Classifier
+import metrics
 
 import learn2learn as l2l
 
@@ -64,8 +65,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     indices_to_labels = pickle.load(infile)
     infile.close()
 
+    print("Generating metadataset")
     meta_test = l2l.data.MetaDataset(dataset)
 
+    print("Generating taskset")
     val_tasks = l2l.data.TaskDataset(meta_test,
                                        task_transforms=[
                                             l2l.data.transforms.NWays(meta_test, ways),
@@ -88,6 +91,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     for iteration in range(iterations):
         iteration_error = 0.0
         iteration_acc = 0.0
+        iteration_acer = 0.0
+        iteration_apcer = 0.0
+        iteration_npcer = 0.0
+
         for _ in range(tps):
             learner = meta_model.clone()
             train_task = val_tasks.sample()
@@ -117,16 +124,25 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             valid_error = loss_func(predictions, evaluation_labels)
             valid_error /= len(evaluation_data)
             valid_accuracy = accuracy(predictions, evaluation_labels)
+            acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
+
             iteration_error += valid_error
             iteration_acc += valid_accuracy
+            iteration_acer += acer
+            iteration_apcer += apcer
+            iteration_npcer += npcer
 
         iteration_error /= tps
         iteration_acc /= tps
+        iteration_acer /= tps
+        iteration_apcer /= tps
+        iteration_npcer /= tps
 
         writer.add_scalar('Loss (iteration)', iteration_error, iteration)
         writer.add_scalar('Accuracy', iteration_acc, iteration)
 
-        print('Loss : {:.3f} Acc : {:.3f}'.format(iteration_error.item(), iteration_acc))
+        print('Loss : {:.3f} Acc : {:.3f} ACER: {:.3f} APCER: {:.3f} NPCER: {:.3f}'
+              .format(iteration_error.item(), iteration_acc, iteration_acer, iteration_apcer, iteration_npcer))
 
         # # Take the meta-learning step
         # opt.zero_grad()
