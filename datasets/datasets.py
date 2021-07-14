@@ -43,7 +43,7 @@ def get_test_augmentations(image_size: int = 224, mean: tuple = (0, 0, 0), std: 
             A.Resize(image_size, image_size),
             A.LongestMaxSize(image_size),
             A.Normalize(mean=mean, std=std),
-            A.PadIfNeeded(image_size, image_size, 0),
+            A.PadIfNeeded(image_size, image_size),
             ToTensor(),
         ]
     )

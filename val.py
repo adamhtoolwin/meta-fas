@@ -50,7 +50,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     mean = (configs['mean']['r'], configs['mean']['g'], configs['mean']['b'])
     std = (configs['std']['r'], configs['std']['g'], configs['std']['b'])
 
-    transforms = get_train_augmentations(configs['image_size'], mean=mean, std=std)
+    transforms = get_test_augmentations(configs['image_size'], mean=mean, std=std)
 
     df = pd.read_csv(configs['train_df'])
 

@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 0
+gpu: 1
 
 show_imgs: False
 
@@ -29,14 +29,14 @@ std:
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
 num_workers_val: 0  # param for validation dataloader
-log_dir: "logs/oulu/inference/"
+log_dir: "logs/oulu/5-shot/inference/"
 max_epochs: 30
 
 # meta-learning hyperparameters
 ways: 2
-shots: 1
-tasks_per_step: 8
-fast_adaption_steps: 5
+shots: 5
+tasks_per_step: 1
+fast_adaption_steps: 10
 iterations: 1000
 lr: 0.005
 maml_lr: 0.001
@@ -46,4 +46,9 @@ train_df: "/root/datasets/siwm/test_labels_inverted.csv"
 dataset_root: "/root/datasets/siwm"
 indices_to_labels: "datasets/indices_to_labels"
 bookkeeping_path: "datasets/bookkeeping_siwm_test"
-weights: "logs/oulu/version_4/weights/epoch_990.pth"
+weights: "logs/oulu/5-shot/version_1/weights/epoch_5000.pth"
+
+#train_df: "/root/datasets/oulu/train.csv"
+#dataset_root: "/root/datasets/oulu"
+#indices_to_labels: "datasets/indices_to_labels"
+#bookkeeping_path: "datasets/bookkeeping_oulu"

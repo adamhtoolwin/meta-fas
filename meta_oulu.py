@@ -9,12 +9,9 @@ import math
 
 import pandas as pd
 import numpy as np
+import torchvision
 import torch
 from torch import nn, optim
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import MNIST
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets.datasets import Dataset, get_train_augmentations, get_test_augmentations
@@ -35,6 +32,12 @@ def get_latest_version(root_dir: str):
             last_version = version + 1
 
     return last_version
+
+
+def construct_grid(batch, nrow: int = 8):
+    images = torchvision.utils.make_grid(batch, nrow=nrow)
+    images = images.detach().cpu().numpy()
+    return images
 
 
 def accuracy(predictions, targets):
@@ -59,10 +62,6 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         df, configs['dataset_root'], transforms, face_detector=None,
         bookkeeping_path=configs['bookkeeping_path'],
     )
-
-    infile = open(configs['indices_to_labels'], 'rb')
-    indices_to_labels = pickle.load(infile)
-    infile.close()
 
     print("Generating metadataset using ", train_dataset.bookkeeping_path)
     meta_train = l2l.data.MetaDataset(train_dataset)
@@ -135,6 +134,11 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         if iteration % configs['save_weight_interval'] == 0:
             torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
+            adaptation_images = construct_grid(adaptation_data, nrow=2*shots)
+            evaluation_images = construct_grid(evaluation_data, nrow=10)
+
+            writer.add_image("Last task (adapt)", adaptation_images, iteration)
+            writer.add_image("Last task (evaluation)", evaluation_images, iteration)
 
 
 if __name__ == '__main__':
