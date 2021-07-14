@@ -6,7 +6,7 @@ gpu: 0
 show_imgs: False
 
 image_size: 224  # size of input image
-cue_log_every: 500  # will log cues every cue_log_every batches. If 0, than won't log
+save_weight_interval: 100  # will only save weights every n iterations
 
 #mean:
 #  r: 0
@@ -29,15 +29,15 @@ std:
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
 num_workers_val: 0  # param for validation dataloader
-log_dir: "logs/oulu/"
+log_dir: "logs/oulu/5-shot/"
 max_epochs: 30
 
 # meta-learning hyperparameters
 ways: 2
-shots: 1
-tasks_per_step: 8
+shots: 5
+tasks_per_step: 2
 fast_adaption_steps: 5
-iterations: 1000
+iterations: 10000
 lr: 0.005
 maml_lr: 0.001
 seed: 1
@@ -45,4 +45,4 @@ seed: 1
 train_df: "/root/datasets/oulu/train.csv"
 dataset_root: "/root/datasets/oulu"
 indices_to_labels: "datasets/indices_to_labels"
-bookkeeping_path: "datasets/bookkeeping"
+bookkeeping_path: "datasets/bookkeeping_oulu"

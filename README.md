@@ -1,5 +1,5 @@
 # Meta-learning for efficient few-shot classification in Facial Liveness Detection
 
-## Prerequisites
+## Notes
 
-1. Run ``datasets.py`` with the config file to generate indices_to_labels pickle. Be sure to use the same SEED in datasets and training, otherwise the dataset indices will be different. (deprecated) Just run the file. It will take a while to generate the metadataset but after the first time, it should be cached on disk.
+1. It will take a while to generate the metadataset but after the first time, it should be cached on disk. The `MetaDataset` class will generate on first use but for later it will the cahced file so the file should be saved somewhere.

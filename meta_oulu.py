@@ -52,19 +52,22 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     transforms = get_train_augmentations(configs['image_size'], mean=mean, std=std)
 
+    print("Reading CSV...")
     df = pd.read_csv(configs['train_df'])
 
     train_dataset = Dataset(
         df, configs['dataset_root'], transforms, face_detector=None,
-        bookkeeping_path=configs['bookkeeping_path']+"bookkeeping_train"
+        bookkeeping_path=configs['bookkeeping_path'],
     )
 
     infile = open(configs['indices_to_labels'], 'rb')
     indices_to_labels = pickle.load(infile)
     infile.close()
 
+    print("Generating metadataset using ", train_dataset.bookkeeping_path)
     meta_train = l2l.data.MetaDataset(train_dataset)
 
+    print("Generating tasks...")
     train_tasks = l2l.data.TaskDataset(meta_train,
                                        task_transforms=[
                                             l2l.data.transforms.NWays(meta_train, ways),
@@ -81,6 +84,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     opt = optim.Adam(meta_model.parameters(), lr=lr)
     loss_func = nn.CrossEntropyLoss()
 
+    print("Starting meta-training...")
     for iteration in range(iterations):
         iteration_error = 0.0
         iteration_acc = 0.0
@@ -122,14 +126,15 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         writer.add_scalar('Loss (iteration)', iteration_error, iteration)
         writer.add_scalar('Accuracy', iteration_acc, iteration)
 
-        print('Loss : {:.3f} Acc : {:.3f}'.format(iteration_error.item(), iteration_acc))
+        print('Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(iteration, iteration_error.item(), iteration_acc))
 
         # Take the meta-learning step
         opt.zero_grad()
         iteration_error.backward()
         opt.step()
 
-        torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
+        if iteration % configs['save_weight_interval'] == 0:
+            torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
 
 
 if __name__ == '__main__':

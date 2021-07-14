@@ -126,6 +126,10 @@ class Dataset(torch.utils.data.Dataset):
         else:
             return image
 
+    @property
+    def bookkeeping_path(self):
+        return self._bookkeeping_path
+
 
 if __name__ == "__main__":
     print("Running dataset analysis...")

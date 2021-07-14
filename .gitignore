@@ -1,5 +1,5 @@
 .idea
 
 datasets/indices_to_labels
-datasets/bookkeeping
+datasets/bookkeeping*
 logs
