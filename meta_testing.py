@@ -72,7 +72,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     val_tasks = l2l.data.TaskDataset(meta_test,
                                        task_transforms=[
                                             l2l.data.transforms.NWays(meta_test, ways),
-                                            l2l.data.transforms.KShots(meta_test, shots + 5, replacement=True),
+                                            l2l.data.transforms.KShots(meta_test, shots + 5, replacement=False),
                                             l2l.data.transforms.LoadData(meta_test),
                                             l2l.data.transforms.RemapLabels(meta_test),
                                             l2l.data.transforms.ConsecutiveLabels(meta_test),
@@ -87,6 +87,13 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     opt = optim.Adam(meta_model.parameters(), lr=lr)
     loss_func = nn.CrossEntropyLoss()
+
+    total_metrics = {
+        'accuracy': 0.0,
+        'acer': 0.0,
+        'apcer': 0.0,
+        'npcer': 0.0
+    }
 
     for iteration in range(iterations):
         iteration_error = 0.0
@@ -144,10 +151,23 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         print('Loss : {:.3f} Acc : {:.3f} ACER: {:.3f} APCER: {:.3f} NPCER: {:.3f}'
               .format(iteration_error.item(), iteration_acc, iteration_acer, iteration_apcer, iteration_npcer))
 
+        total_metrics['accuracy'] += iteration_acc
+        total_metrics['acer'] += iteration_acer
+        total_metrics['apcer'] += iteration_apcer
+        total_metrics['npcer'] += iteration_npcer
+
         # # Take the meta-learning step
         # opt.zero_grad()
         # iteration_error.backward()
         # opt.step()
+
+    avg_acc = total_metrics['accuracy'] / iterations
+    avg_acer = total_metrics['acer'] / iterations
+    avg_apcer = total_metrics['apcer'] / iterations
+    avg_npcer = total_metrics['npcer'] / iterations
+
+    print('Averages - Acc: {:.3f} ACER: {:.3f} APCER: {:.3f} NPCER: {:.3f}'
+          .format(avg_acc, avg_acer, avg_apcer, avg_npcer))
 
 
 if __name__ == '__main__':
