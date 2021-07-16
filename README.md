@@ -15,4 +15,5 @@ This metadataset should be saved in the file specified in the `bookkeeping_path`
 
 ## Examples
 
-1. MNIST examples under the mnist folder. A sample config file for it is also given and can be customized.
+1. MNIST examples under the [mnist](/examples/mnist) folder. A sample config file for it is also given and can be customized.
+Run `python meta_mnist.py -c configs/mnist/train_config.yml`.

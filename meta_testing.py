@@ -45,7 +45,8 @@ def accuracy(predictions, targets):
     return acc.item()
 
 
-def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5, device=torch.device("cpu"),
+def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5,
+         device=torch.device("cpu"),
          download_location='~/data'):
 
     mean = (configs['mean']['r'], configs['mean']['g'], configs['mean']['b'])
@@ -70,14 +71,14 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     print("Generating taskset")
     val_tasks = l2l.data.TaskDataset(meta_test,
-                                       task_transforms=[
-                                            l2l.data.transforms.NWays(meta_test, ways),
-                                            l2l.data.transforms.KShots(meta_test, shots + 5, replacement=False),
-                                            l2l.data.transforms.LoadData(meta_test),
-                                            l2l.data.transforms.RemapLabels(meta_test),
-                                            l2l.data.transforms.ConsecutiveLabels(meta_test),
-                                       ],
-                                       num_tasks=10000)
+                                     task_transforms=[
+                                         l2l.data.transforms.NWays(meta_test, ways),
+                                         l2l.data.transforms.KShots(meta_test, shots + 5, replacement=False),
+                                         l2l.data.transforms.LoadData(meta_test),
+                                         l2l.data.transforms.RemapLabels(meta_test),
+                                         l2l.data.transforms.ConsecutiveLabels(meta_test),
+                                     ],
+                                     num_tasks=10000)
 
     model = ResNet18Classifier(pretrained=False)
     model.to(device)
@@ -113,7 +114,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             adaptation_indices = np.zeros(data.size(0), dtype=bool)
             adaptation_indices[:shots] = True
             length = adaptation_indices.shape[0]
-            adaptation_indices[math.floor(length/2):math.floor(length/2 + shots)] = True
+            adaptation_indices[math.floor(length / 2):math.floor(length / 2 + shots)] = True
 
             # adaptation_indices[np.arange(shots*ways) * 2] = True
             evaluation_indices = torch.from_numpy(~adaptation_indices)
