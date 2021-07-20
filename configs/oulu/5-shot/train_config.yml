@@ -6,7 +6,12 @@ gpu: 2
 log_tasks: True
 
 image_size: 224  # size of input image
-save_weight_interval: 100  # will only save weights every n iterations
+save_weight_interval: 200  # will only save weights every n iterations
+
+loss_coef:  # coefficients for losses
+  clf_loss: 5.0
+  reg_loss: 5.0
+  trip_loss: 1.0
 
 mean:
   r: 0
@@ -35,9 +40,9 @@ max_epochs: 30
 # meta-learning hyperparameters
 ways: 2
 shots: 5
-tasks_per_step: 2
+tasks_per_step: 4
 fast_adaption_steps: 5
-iterations: 10000
+iterations: 20000
 lr: 0.005
 maml_lr: 0.001
 seed: 1

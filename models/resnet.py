@@ -125,13 +125,21 @@ def make_layer(
     return nn.Sequential(*layers)
 
 
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, x):
+        return x
+
+
 class ResNet18Encoder(nn.Module):
     def __init__(
         self, out_indices: List[int] = (1, 2, 3, 4), pretrained: bool = True
     ):
         super().__init__()
         self.resnet18 = models.resnet18(pretrained=pretrained)
-        self.resnet18.fc = None
+        self.resnet18.fc = Identity()
         self.out_indices = out_indices
 
         if pretrained:
