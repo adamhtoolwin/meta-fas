@@ -6,25 +6,29 @@ gpu: 1
 show_imgs: False
 
 image_size: 224  # size of input image
-cue_log_every: 500  # will log cues every cue_log_every batches. If 0, than won't log
 
-#mean:
-#  r: 0
-#  g: 0
-#  b: 0
-#std:
-#  r: 1
-#  g: 1
-#  b: 1
+loss_coef:  # coefficients for losses
+  clf_loss: 5.0
+  reg_loss: 5.0
+  trip_loss: 1.0
 
 mean:
-  r: 0.485
-  g: 0.456
-  b: 0.406
+  r: 0
+  g: 0
+  b: 0
 std:
-  r: 0.229
-  g: 0.224
-  b: 0.225
+  r: 1
+  g: 1
+  b: 1
+
+#mean:
+#  r: 0.485
+#  g: 0.456
+#  b: 0.406
+#std:
+#  r: 0.229
+#  g: 0.224
+#  b: 0.225
 
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
@@ -36,11 +40,12 @@ max_epochs: 30
 ways: 2
 shots: 5
 tasks_per_step: 1
-fast_adaption_steps: 10
+fast_adaption_steps: 15
 iterations: 100
 lr: 0.005
-maml_lr: 0.001
+maml_lr: 0.0001
 seed: 1
+no_adaptation: False
 
 train_df: "/root/datasets/siwm/test_labels_inverted.csv"
 dataset_root: "/root/datasets/siwm"
@@ -51,4 +56,4 @@ bookkeeping_path: "datasets/bookkeeping_siwm_test"
 #dataset_root: "/root/datasets/oulu"
 #indices_to_labels: "datasets/indices_to_labels"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
-weights: "logs/oulu/5-shot/version_1/weights/epoch_9000.pth"
+weights: "logs/oulu/5-shot/version_9/weights/epoch_2400.pth"

@@ -102,8 +102,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                            l2l.data.transforms.NWays(meta_train, ways),
                                            l2l.data.transforms.KShots(meta_train, shots + 5, replacement=True),
                                            l2l.data.transforms.LoadData(meta_train),
-                                           l2l.data.transforms.RemapLabels(meta_train),
-                                           l2l.data.transforms.ConsecutiveLabels(meta_train),
+                                           # l2l.data.transforms.RemapLabels(meta_train),
+                                           # l2l.data.transforms.ConsecutiveLabels(meta_train),
                                        ],
                                        num_tasks=10000)
 
@@ -114,17 +114,20 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     triplet_loss = TripletLoss()
     clf_criterion = nn.CrossEntropyLoss()
-    loss_func = nn.CrossEntropyLoss()
 
     print("Starting meta-training...")
     for iteration in range(iterations):
         iteration_error = 0.0
+        iteration_clf_loss = 0.0
+        iteration_triplet_loss = 0.0
+        iteration_reg_loss = 0.0
+
         iteration_acc = 0.0
         iteration_acer = 0.0
         iteration_apcer = 0.0
         iteration_npcer = 0.0
 
-        for _ in range(tps):
+        for task in range(tps):
             learner = meta_model.clone()
             train_task = train_tasks.sample()
             data, labels = train_task
@@ -154,6 +157,9 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                         adaptation_labels
                                                                         )
 
+                if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
+                    writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task), train_loss, step)
+
                 # train_error = loss_func(learner(adaptation_data), adaptation_labels)
                 learner.adapt(train_loss)
 
@@ -177,25 +183,41 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             # acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
 
             iteration_error += val_loss
+            iteration_clf_loss += clf_loss
+            iteration_triplet_loss += trip_loss
+            iteration_reg_loss += reg_loss
+
             iteration_acc += val_acc
             iteration_acer += acer
             iteration_apcer += apcer
             iteration_npcer += npcer
 
         iteration_error /= tps
+        iteration_clf_loss /= tps
+        iteration_triplet_loss /= tps
+        iteration_reg_loss /= tps
+
         iteration_acc /= tps
         iteration_acer /= tps
         iteration_apcer /= tps
         iteration_npcer /= tps
 
         writer.add_scalar('Loss (iteration)', iteration_error, iteration)
+        writer.add_scalar('Loss Decomp/classifier loss', iteration_clf_loss, iteration)
+        writer.add_scalar('Loss Decomp/triplet loss', iteration_triplet_loss, iteration)
+        writer.add_scalar('Loss Decomp/regression loss', iteration_reg_loss, iteration)
+
         writer.add_scalar('Accuracy', iteration_acc, iteration)
 
         writer.add_scalar('Metrics (training)/acer', iteration_acer, iteration)
         writer.add_scalar('Metrics (training)/apcer', iteration_apcer, iteration)
         writer.add_scalar('Metrics (training)/npcer', iteration_npcer, iteration)
 
-        print('Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(iteration, iteration_error.item(), iteration_acc))
+        print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(configs['version'],
+                                                                                iteration,
+                                                                                iteration_error.item(),
+                                                                                iteration_acc)
+              )
 
         # Take the meta-learning step
         opt.zero_grad()

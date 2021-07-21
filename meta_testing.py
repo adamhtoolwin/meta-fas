@@ -18,6 +18,8 @@ from torchvision.datasets import MNIST
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets.datasets import Dataset, get_train_augmentations, get_test_augmentations
+from loss import TripletLoss
+from meta_training import calc_losses
 from models.scan import SCAN, ResNet18Classifier
 import metrics
 
@@ -75,19 +77,20 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                          l2l.data.transforms.NWays(meta_test, ways),
                                          l2l.data.transforms.KShots(meta_test, shots + 5, replacement=False),
                                          l2l.data.transforms.LoadData(meta_test),
-                                         l2l.data.transforms.RemapLabels(meta_test),
-                                         l2l.data.transforms.ConsecutiveLabels(meta_test),
+                                         # l2l.data.transforms.RemapLabels(meta_test),
+                                         # l2l.data.transforms.ConsecutiveLabels(meta_test),
                                      ],
-                                     num_tasks=10000)
+                                     num_tasks=-1)
 
-    model = ResNet18Classifier(pretrained=False)
+    model = SCAN(pretrained=False)
     model.to(device)
-    meta_model = l2l.algorithms.MAML(model, lr=maml_lr)
+    meta_model = l2l.algorithms.MAML(model, lr=maml_lr, allow_nograd=False, first_order=True)
 
     meta_model.load_state_dict(torch.load(configs['weights']))
 
     opt = optim.Adam(meta_model.parameters(), lr=lr)
-    loss_func = nn.CrossEntropyLoss()
+    triplet_loss = TripletLoss()
+    clf_criterion = nn.CrossEntropyLoss()
 
     total_metrics = {
         'accuracy': 0.0,
@@ -98,12 +101,16 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     for iteration in range(iterations):
         iteration_error = 0.0
+        iteration_clf_loss = 0.0
+        iteration_triplet_loss = 0.0
+        iteration_reg_loss = 0.0
+
         iteration_acc = 0.0
         iteration_acer = 0.0
         iteration_apcer = 0.0
         iteration_npcer = 0.0
 
-        for _ in range(tps):
+        for task in range(tps):
             learner = meta_model.clone()
             train_task = val_tasks.sample()
             data, labels = train_task
@@ -124,33 +131,68 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
             # Fast Adaptation
             for step in range(fas):
-                train_error = loss_func(learner(adaptation_data), adaptation_labels)
-                learner.adapt(train_error)
+                outs, clf_out = learner(adaptation_data)
+                train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
+                                                                        clf_criterion,
+                                                                        triplet_loss,
+                                                                        outs,
+                                                                        clf_out,
+                                                                        adaptation_labels
+                                                                        )
+
+                learner.adapt(train_loss)
 
             # Compute validation loss
-            predictions = learner(evaluation_data)
-            valid_error = loss_func(predictions, evaluation_labels)
-            valid_error /= len(evaluation_data)
-            valid_accuracy = accuracy(predictions, evaluation_labels)
-            acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
+            outs, clf_out = learner(evaluation_data)
+            val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
+                                                                  adaptation_labels)
 
-            iteration_error += valid_error
-            iteration_acc += valid_accuracy
+            scores = []
+            cues = outs[-1]
+            for i in range(cues.shape[0]):
+                score = 1.0 - cues[i,].mean().cpu().item()
+                scores.append(score)
+
+            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
+                                                                   evaluation_labels.cpu().long().numpy())
+            acer, apcer, npcer = metrics_
+
+            iteration_error += val_loss
+            iteration_clf_loss += clf_loss
+            iteration_triplet_loss += trip_loss
+            iteration_reg_loss += reg_loss
+
+            iteration_acc += val_acc
             iteration_acer += acer
             iteration_apcer += apcer
             iteration_npcer += npcer
 
         iteration_error /= tps
+        iteration_clf_loss /= tps
+        iteration_triplet_loss /= tps
+        iteration_reg_loss /= tps
+
         iteration_acc /= tps
         iteration_acer /= tps
         iteration_apcer /= tps
         iteration_npcer /= tps
 
         writer.add_scalar('Loss (iteration)', iteration_error, iteration)
+        writer.add_scalar('Loss Decomp/classifier loss', iteration_clf_loss, iteration)
+        writer.add_scalar('Loss Decomp/triplet loss', iteration_triplet_loss, iteration)
+        writer.add_scalar('Loss Decomp/regression loss', iteration_reg_loss, iteration)
+
         writer.add_scalar('Accuracy', iteration_acc, iteration)
 
-        print('Loss : {:.3f} Acc : {:.3f} ACER: {:.3f} APCER: {:.3f} NPCER: {:.3f}'
-              .format(iteration_error.item(), iteration_acc, iteration_acer, iteration_apcer, iteration_npcer))
+        writer.add_scalar('Metrics (training)/acer', iteration_acer, iteration)
+        writer.add_scalar('Metrics (training)/apcer', iteration_apcer, iteration)
+        writer.add_scalar('Metrics (training)/npcer', iteration_npcer, iteration)
+
+        print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(configs['version'],
+                                                                                iteration,
+                                                                                iteration_error.item(),
+                                                                                iteration_acc)
+              )
 
         total_metrics['accuracy'] += iteration_acc
         total_metrics['acer'] += iteration_acer
@@ -188,13 +230,20 @@ if __name__ == '__main__':
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
 
+    version = get_latest_version(log_dir)
+
+    version_directory = log_dir + "version_" + str(version)
+    if not os.path.isdir(version_directory):
+        os.makedirs(version_directory)
+
     debug = args.debug
 
     start = datetime.datetime.now()
     configs['start'] = start
+    configs['version'] = version
     configs['debug'] = debug
 
-    with open(log_dir + '/configs.yml', 'w') as outfile:
+    with open(version_directory + '/configs.yml', 'w') as outfile:
         yaml.dump(configs, outfile, default_flow_style=False)
 
     # ========================= End of DevOps ==========================
@@ -215,7 +264,7 @@ if __name__ == '__main__':
     print("Using", device)
     print("Debug: ", debug)
 
-    writer = SummaryWriter(log_dir=log_dir)
+    writer = SummaryWriter(log_dir=version_directory)
 
     main(configs=configs,
          writer=writer,
