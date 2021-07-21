@@ -3,6 +3,11 @@ debug: False
 no_cuda: False
 gpu: 1
 
+log_tasks: True
+log_tasks_interval: 5
+plot_inner_loop_loss: True
+plot_inner_loop_interval: 5
+
 show_imgs: False
 
 image_size: 224  # size of input image
@@ -56,4 +61,4 @@ bookkeeping_path: "datasets/bookkeeping_siwm_test"
 #dataset_root: "/root/datasets/oulu"
 #indices_to_labels: "datasets/indices_to_labels"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
-weights: "logs/oulu/5-shot/version_9/weights/epoch_2400.pth"
+weights: "logs/oulu/5-shot/version_10/weights/epoch_6000.pth"

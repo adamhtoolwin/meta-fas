@@ -226,11 +226,13 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         if iteration % configs['save_weight_interval'] == 0:
             torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
-            adaptation_images = construct_grid(adaptation_data, nrow=2 * shots)
-            evaluation_images = construct_grid(evaluation_data, nrow=10)
 
-            writer.add_image("Last task (adapt)", adaptation_images, iteration)
-            writer.add_image("Last task (evaluation)", evaluation_images, iteration)
+            if configs['log_tasks']:
+                adaptation_images = construct_grid(adaptation_data, nrow=2 * shots)
+                evaluation_images = construct_grid(evaluation_data, nrow=10)
+
+                writer.add_image("Last task (adapt)", adaptation_images, iteration)
+                writer.add_image("Last task (evaluation)", evaluation_images, iteration)
 
 
 if __name__ == '__main__':

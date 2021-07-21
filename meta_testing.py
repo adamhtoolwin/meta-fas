@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from datasets.datasets import Dataset, get_train_augmentations, get_test_augmentations
 from loss import TripletLoss
-from meta_training import calc_losses
+from meta_training import calc_losses, construct_grid
 from models.scan import SCAN, ResNet18Classifier
 import metrics
 
@@ -130,17 +130,21 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             evaluation_data, evaluation_labels = data[evaluation_indices], labels[evaluation_indices]
 
             # Fast Adaptation
-            for step in range(fas):
-                outs, clf_out = learner(adaptation_data)
-                train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
-                                                                        clf_criterion,
-                                                                        triplet_loss,
-                                                                        outs,
-                                                                        clf_out,
-                                                                        adaptation_labels
-                                                                        )
+            if not configs['no_adaptation']:
+                for step in range(fas):
+                    outs, clf_out = learner(adaptation_data)
+                    train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
+                                                                            clf_criterion,
+                                                                            triplet_loss,
+                                                                            outs,
+                                                                            clf_out,
+                                                                            adaptation_labels
+                                                                            )
 
-                learner.adapt(train_loss)
+                    if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
+                        writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task),
+                                          train_loss, step)
+                    learner.adapt(train_loss)
 
             # Compute validation loss
             outs, clf_out = learner(evaluation_data)
@@ -193,6 +197,13 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                                 iteration_error.item(),
                                                                                 iteration_acc)
               )
+
+        if configs['log_tasks'] and iteration % configs['log_tasks_interval'] == 0:
+            adaptation_images = construct_grid(adaptation_data, nrow=2 * shots)
+            evaluation_images = construct_grid(evaluation_data, nrow=10)
+
+            writer.add_image("Last task (adapt)", adaptation_images, iteration)
+            writer.add_image("Last task (evaluation)", evaluation_images, iteration)
 
         total_metrics['accuracy'] += iteration_acc
         total_metrics['acer'] += iteration_acer
@@ -263,6 +274,7 @@ if __name__ == '__main__':
 
     print("Using", device)
     print("Debug: ", debug)
+    print("Version: ", version)
 
     writer = SummaryWriter(log_dir=version_directory)
 

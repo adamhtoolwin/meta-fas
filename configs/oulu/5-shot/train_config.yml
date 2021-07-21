@@ -4,6 +4,8 @@ no_cuda: False
 gpu: 2
 
 log_tasks: True
+log_tasks_interval: 300
+
 plot_inner_loop_loss: True
 plot_inner_loop_interval: 250
 
