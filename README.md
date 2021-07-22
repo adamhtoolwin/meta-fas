@@ -17,3 +17,15 @@ This metadataset should be saved in the file specified in the `bookkeeping_path`
 
 1. MNIST examples under the [mnist](/examples/mnist) folder. A sample config file for it is also given and can be customized.
 Run `python meta_mnist.py -c configs/mnist/train_config.yml`.
+
+## Dataset Preprocessing
+
+A script to decode HKBU-MARs is provided in [preprocessing](/preprocessing) folder.
+
+## References
+
+1. Finn, C., Abbeel, P., & Levine, S. (2017, July). Model-agnostic meta-learning for fast adaptation of deep networks. 
+In International Conference on Machine Learning (pp. 1126-1135). PMLR.
+
+2. Feng, H., Hong, Z., Yue, H., Chen, Y., Wang, K., Han, J., ... & Ding, E. (2020). 
+Learning generalized spoof cues for face anti-spoofing. arXiv preprint arXiv:2005.03922.
