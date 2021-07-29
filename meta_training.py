@@ -86,17 +86,23 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     transforms = get_train_augmentations(configs['image_size'], mean=mean, std=std)
 
     print("Reading CSV...")
-    df = pd.read_csv(configs['train_df'])
+    train_df = pd.read_csv(configs['train_df'])
+    val_df = pd.read_csv(configs['val_df'])
 
     train_dataset = Dataset(
-        df, configs['dataset_root'], transforms, face_detector=None,
-        bookkeeping_path=configs['bookkeeping_path'],
+        train_df, configs['dataset_root'], transforms, face_detector=None,
+        bookkeeping_path=configs['train_bookkeeping_path'],
     )
 
-    print("Generating metadataset using ", train_dataset.bookkeeping_path)
+    validation_dataset = Dataset(
+        val_df, configs['dataset_root'], transforms, face_detector=None,
+        bookkeeping_path=configs['val_bookkeeping_path'],
+    )
+
+    print("Generating meta-training dataset using ", train_dataset.bookkeeping_path)
     meta_train = l2l.data.MetaDataset(train_dataset)
 
-    print("Generating tasks...")
+    print("Generating meta-training tasks...")
     train_tasks = l2l.data.TaskDataset(meta_train,
                                        task_transforms=[
                                            l2l.data.transforms.NWays(meta_train, ways),
@@ -106,6 +112,18 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                            # l2l.data.transforms.ConsecutiveLabels(meta_train),
                                        ],
                                        num_tasks=10000)
+
+    print("Generating meta-validation dataset using ", validation_dataset.bookkeeping_path)
+    meta_validation = l2l.data.MetaDataset(validation_dataset)
+
+    print("Generating meta-validation tasks...")
+    val_tasks = l2l.data.TaskDataset(meta_validation,
+                                     task_transforms=[
+                                         l2l.data.transforms.NWays(meta_train, ways),
+                                         l2l.data.transforms.KShots(meta_train, shots + 5, replacement=True),
+                                         l2l.data.transforms.LoadData(meta_train),
+                                     ],
+                                     num_tasks=10000)
 
     model = SCAN(pretrained=False)
     model.to(device)
@@ -121,12 +139,21 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         iteration_clf_loss = 0.0
         iteration_triplet_loss = 0.0
         iteration_reg_loss = 0.0
-
         iteration_acc = 0.0
         iteration_acer = 0.0
         iteration_apcer = 0.0
         iteration_npcer = 0.0
 
+        val_iteration_error = 0.0
+        val_iteration_clf_loss = 0.0
+        val_iteration_triplet_loss = 0.0
+        val_iteration_reg_loss = 0.0
+        val_iteration_acc = 0.0
+        val_iteration_acer = 0.0
+        val_iteration_apcer = 0.0
+        val_iteration_npcer = 0.0
+
+        # Meta-training loop
         for task in range(tps):
             learner = meta_model.clone()
             train_task = train_tasks.sample()
@@ -158,7 +185,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                         )
 
                 if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
-                    writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task), train_loss, step)
+                    writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task), train_loss,
+                                      step)
 
                 # train_error = loss_func(learner(adaptation_data), adaptation_labels)
                 learner.adapt(train_loss)
@@ -174,7 +202,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                 score = 1.0 - cues[i,].mean().cpu().item()
                 scores.append(score)
 
-            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores), evaluation_labels.cpu().long().numpy())
+            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
+                                                                   evaluation_labels.cpu().long().numpy())
             acer, apcer, npcer = metrics_
 
             # valid_error = loss_func(predictions, evaluation_labels)
@@ -192,37 +221,121 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             iteration_apcer += apcer
             iteration_npcer += npcer
 
+        # Meta-training metrics
         iteration_error /= tps
         iteration_clf_loss /= tps
         iteration_triplet_loss /= tps
         iteration_reg_loss /= tps
-
         iteration_acc /= tps
         iteration_acer /= tps
         iteration_apcer /= tps
         iteration_npcer /= tps
 
-        writer.add_scalar('Loss (iteration)', iteration_error, iteration)
-        writer.add_scalar('Loss Decomp/classifier loss', iteration_clf_loss, iteration)
-        writer.add_scalar('Loss Decomp/triplet loss', iteration_triplet_loss, iteration)
-        writer.add_scalar('Loss Decomp/regression loss', iteration_reg_loss, iteration)
-
-        writer.add_scalar('Accuracy', iteration_acc, iteration)
-
-        writer.add_scalar('Metrics (training)/acer', iteration_acer, iteration)
-        writer.add_scalar('Metrics (training)/apcer', iteration_apcer, iteration)
-        writer.add_scalar('Metrics (training)/npcer', iteration_npcer, iteration)
-
-        print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(configs['version'],
-                                                                                iteration,
-                                                                                iteration_error.item(),
-                                                                                iteration_acc)
-              )
-
         # Take the meta-learning step
         opt.zero_grad()
         iteration_error.backward()
         opt.step()
+
+        # Meta-validation loop
+        for task in range(tps):
+            learner = meta_model.clone()
+            val_task = val_tasks.sample()
+            data, labels = val_task
+            data = data.to(device)
+            labels = labels.to(device)
+
+            # Separate data into adaptation/evalutation sets
+            adaptation_indices = np.zeros(data.size(0), dtype=bool)
+            adaptation_indices[:shots] = True
+            length = adaptation_indices.shape[0]
+            adaptation_indices[math.floor(length / 2):math.floor(length / 2 + shots)] = True
+
+            # adaptation_indices[np.arange(shots*ways) * 2] = True
+            evaluation_indices = torch.from_numpy(~adaptation_indices)
+            adaptation_indices = torch.from_numpy(adaptation_indices)
+            adaptation_data, adaptation_labels = data[adaptation_indices], labels[adaptation_indices]
+            evaluation_data, evaluation_labels = data[evaluation_indices], labels[evaluation_indices]
+
+            # Fast Adaptation
+            if not configs['no_adaptation']:
+                for step in range(fas):
+                    outs, clf_out = learner(adaptation_data)
+                    train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
+                                                                            clf_criterion,
+                                                                            triplet_loss,
+                                                                            outs,
+                                                                            clf_out,
+                                                                            adaptation_labels
+                                                                            )
+
+                    if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
+                        writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task),
+                                          train_loss, step)
+                    learner.adapt(train_loss)
+
+            # Compute validation loss
+            outs, clf_out = learner(evaluation_data)
+            val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
+                                                                  adaptation_labels)
+
+            scores = []
+            cues = outs[-1]
+            for i in range(cues.shape[0]):
+                score = 1.0 - cues[i,].mean().cpu().item()
+                scores.append(score)
+
+            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
+                                                                   evaluation_labels.cpu().long().numpy())
+            acer, apcer, npcer = metrics_
+
+            val_iteration_error += val_loss
+            val_iteration_clf_loss += clf_loss
+            val_iteration_triplet_loss += trip_loss
+            val_iteration_reg_loss += reg_loss
+
+            val_iteration_acc += val_acc
+            val_iteration_acer += acer
+            val_iteration_apcer += apcer
+            val_iteration_npcer += npcer
+
+        # Meta-validation metrics
+        val_iteration_error /= tps
+        val_iteration_clf_loss /= tps
+        val_iteration_triplet_loss /= tps
+        val_iteration_reg_loss /= tps
+        val_iteration_acc /= tps
+        val_iteration_acer /= tps
+        val_iteration_apcer /= tps
+        val_iteration_npcer /= tps
+
+        # Plotting meta-training metrics
+        writer.add_scalar('Losses (training)/Total', iteration_error, iteration)
+        writer.add_scalar('Losses (training)/classifier loss', iteration_clf_loss, iteration)
+        writer.add_scalar('Losses (training)/triplet loss', iteration_triplet_loss, iteration)
+        writer.add_scalar('Losses (training)/regression loss', iteration_reg_loss, iteration)
+        writer.add_scalar('Metrics (training)/Accuracy', iteration_acc, iteration)
+        writer.add_scalar('Metrics (training)/acer', iteration_acer, iteration)
+        writer.add_scalar('Metrics (training)/apcer', iteration_apcer, iteration)
+        writer.add_scalar('Metrics (training)/npcer', iteration_npcer, iteration)
+
+        # Plotting meta-validation metrics
+        writer.add_scalar('Losses (validation)/Total', iteration_error, iteration)
+        writer.add_scalar('Losses (validation)/classifier loss', iteration_clf_loss, iteration)
+        writer.add_scalar('Losses (validation)/triplet loss', iteration_triplet_loss, iteration)
+        writer.add_scalar('Losses (validation)/regression loss', iteration_reg_loss, iteration)
+        writer.add_scalar('Metrics (validation)/Accuracy', iteration_acc, iteration)
+        writer.add_scalar('Metrics (validation)/acer', iteration_acer, iteration)
+        writer.add_scalar('Metrics (validation)/apcer', iteration_apcer, iteration)
+        writer.add_scalar('Metrics (validation)/npcer', iteration_npcer, iteration)
+
+        print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f} Val Loss : {:.3f} Val Acc : {:.3f}'.format(
+            configs['version'],
+            iteration,
+            iteration_error.item(),
+            iteration_acc,
+            val_iteration_error.item(),
+            val_iteration_acc)
+        )
 
         if iteration % configs['save_weight_interval'] == 0:
             torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
