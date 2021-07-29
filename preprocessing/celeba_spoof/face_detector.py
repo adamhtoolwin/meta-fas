@@ -8,7 +8,7 @@ import pandas as pd
 
 
 if __name__ == "__main__":
-    device = "cuda:0" if torch.cuda.is_available() else None
+    device = "cuda:2" if torch.cuda.is_available() else None
 
     parser = argparse.ArgumentParser(
             description='Detect faces using MTCNN.',
