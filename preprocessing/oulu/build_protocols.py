@@ -30,8 +30,12 @@ if __name__ == '__main__':
     val_indices = []
     for index, row in pbar:
         file_type = row['path'].split("/")[-2].split("_")[-1]
+        person_id = int(row['path'].split("/")[-2].split("_")[-2])
 
         if file_type == '4' or file_type == '5':
+            val_indices.append(index)
+
+        if person_id >= 36 and person_id <= 55 and file_type == '1':
             val_indices.append(index)
 
         if args.debug:
@@ -44,8 +48,12 @@ if __name__ == '__main__':
     val_indices = []
     for index, row in pbar2:
         file_type = row['path'].split("/")[-2].split("_")[-1]
+        person_id = int(row['path'].split("/")[-2].split("_")[-2])
 
         if file_type == '2' or file_type == '3':
+            val_indices.append(index)
+
+        if person_id >= 36 and person_id <= 55 and file_type == '1':
             val_indices.append(index)
 
         if args.debug:
