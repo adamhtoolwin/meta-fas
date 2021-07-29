@@ -185,7 +185,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                         )
 
                 if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
-                    writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task), train_loss,
+                    writer.add_scalar('Adaptation Loss (training)/Iteration ' + str(iteration) + ' Task ' + str(task), train_loss,
                                       step)
 
                 # train_error = loss_func(learner(adaptation_data), adaptation_labels)
@@ -269,7 +269,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                             )
 
                     if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
-                        writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task),
+                        writer.add_scalar('Adaptation Loss (validation)/Iteration ' + str(iteration) + ' Task ' + str(task),
                                           train_loss, step)
                     learner.adapt(train_loss)
 
@@ -319,14 +319,14 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         writer.add_scalar('Metrics (training)/npcer', iteration_npcer, iteration)
 
         # Plotting meta-validation metrics
-        writer.add_scalar('Losses (validation)/Total', iteration_error, iteration)
-        writer.add_scalar('Losses (validation)/classifier loss', iteration_clf_loss, iteration)
-        writer.add_scalar('Losses (validation)/triplet loss', iteration_triplet_loss, iteration)
-        writer.add_scalar('Losses (validation)/regression loss', iteration_reg_loss, iteration)
-        writer.add_scalar('Metrics (validation)/Accuracy', iteration_acc, iteration)
-        writer.add_scalar('Metrics (validation)/acer', iteration_acer, iteration)
-        writer.add_scalar('Metrics (validation)/apcer', iteration_apcer, iteration)
-        writer.add_scalar('Metrics (validation)/npcer', iteration_npcer, iteration)
+        writer.add_scalar('Losses (validation)/Total', val_iteration_error, iteration)
+        writer.add_scalar('Losses (validation)/classifier loss', val_iteration_clf_loss, iteration)
+        writer.add_scalar('Losses (validation)/triplet loss', val_iteration_triplet_loss, iteration)
+        writer.add_scalar('Losses (validation)/regression loss', val_iteration_reg_loss, iteration)
+        writer.add_scalar('Metrics (validation)/Accuracy', val_iteration_acc, iteration)
+        writer.add_scalar('Metrics (validation)/acer', val_iteration_acer, iteration)
+        writer.add_scalar('Metrics (validation)/apcer', val_iteration_apcer, iteration)
+        writer.add_scalar('Metrics (validation)/npcer', val_iteration_npcer, iteration)
 
         print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f} Val Loss : {:.3f} Val Acc : {:.3f}'.format(
             configs['version'],

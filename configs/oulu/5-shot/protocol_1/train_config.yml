@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 0
+gpu: 3
 
 log_tasks: True
 log_tasks_interval: 300

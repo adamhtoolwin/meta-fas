@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-o', '--output_size', type=int, help='Output size of cropped images.', default=224)
     parser.add_argument('-l', '--labels_file', type=str, help='The file to refer to for the labels.', default=None)
+    parser.add_argument('-s', '--start_index', type=int, help='The index of the labels from which to start detecting.', default=0)
     parser.add_argument('--debug', dest='debug', action='store_true', help='Debug mode to run once and see csv.')
 
     args = parser.parse_args()
@@ -27,12 +28,12 @@ if __name__ == "__main__":
     labels_df = pd.read_csv(args.labels_file)
     face_detector = MTCNN(image_size=args.output_size, device=device)
 
+    print("Starting reading labels...")
     pbar = tqdm(range(len(labels_df)), position=1)
     for index in pbar:
         path = labels_df.at[index, 'path']
 
         pbar.set_description("Processing image %s" % path)
-        image = Image.open(path)
 
         new_path = labels_df.iloc[index].path[:-4] + "_cropped.jpg"
 
@@ -43,6 +44,13 @@ if __name__ == "__main__":
         elif int(labels_df.at[index, 'target']) == 1:
             labels_df.at[index, 'target'] = 0
 
+        if index % 100000 == 0:
+            labels_df.to_csv("/root/datasets/CelebA_Spoof/metas/intra_test/celebA_cropped.csv", index=False)
+
+        if index < args.start_index:
+            continue
+
+        image = Image.open(path)
         cropped_image = face_detector(image, save_path=new_path)
 
         torch.cuda.empty_cache()
@@ -50,7 +58,7 @@ if __name__ == "__main__":
         if args.debug:
             break
 
-    labels_df.to_csv("/root/datasets/CelebA_Spoof/metas/intra_test/celeba_spoof_cropped.csv", index=False)
+    labels_df.to_csv("/root/datasets/CelebA_Spoof/metas/intra_test/celebA_cropped.csv", index=False)
 
 
 
