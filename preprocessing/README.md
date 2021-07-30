@@ -20,6 +20,11 @@ Pytorch Datasets are found in datasets folder.
 - Train: OULU(live and replay) + CelebA_Spoof
 - Validation: OULU(print) + Live from Oulu users (36-55)
 
+### Protocol 3
+
+- Train: OULU(live and print) + CelebA_Spoof
+- Validation: CASIA-FASD
+
 ***
 
 ## Meta-testing

@@ -64,10 +64,6 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         # bookkeeping_path = configs['bookkeeping_path'] + "bookkeeping_" + configs['train_df'].split("/")[-1]
     )
 
-    infile = open(configs['indices_to_labels'], 'rb')
-    indices_to_labels = pickle.load(infile)
-    infile.close()
-
     print("Generating metadataset")
     meta_test = l2l.data.MetaDataset(dataset)
 
@@ -181,16 +177,15 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         iteration_apcer /= tps
         iteration_npcer /= tps
 
-        writer.add_scalar('Loss (iteration)', iteration_error, iteration)
-        writer.add_scalar('Loss Decomp/classifier loss', iteration_clf_loss, iteration)
-        writer.add_scalar('Loss Decomp/triplet loss', iteration_triplet_loss, iteration)
-        writer.add_scalar('Loss Decomp/regression loss', iteration_reg_loss, iteration)
+        writer.add_scalar('Losses (meta-testing)/Total', iteration_error, iteration)
+        writer.add_scalar('Losses (meta-testing)/classifier loss', iteration_clf_loss, iteration)
+        writer.add_scalar('Losses (meta-testing)/triplet loss', iteration_triplet_loss, iteration)
+        writer.add_scalar('Losses (meta-testing)/regression loss', iteration_reg_loss, iteration)
 
-        writer.add_scalar('Accuracy', iteration_acc, iteration)
-
-        writer.add_scalar('Metrics (training)/acer', iteration_acer, iteration)
-        writer.add_scalar('Metrics (training)/apcer', iteration_apcer, iteration)
-        writer.add_scalar('Metrics (training)/npcer', iteration_npcer, iteration)
+        writer.add_scalar('Metrics (meta-testing)/Accuracy', iteration_acc, iteration)
+        writer.add_scalar('Metrics (meta-testing)/acer', iteration_acer, iteration)
+        writer.add_scalar('Metrics (meta-testing)/apcer', iteration_apcer, iteration)
+        writer.add_scalar('Metrics (meta-testing)/npcer', iteration_npcer, iteration)
 
         print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(configs['version'],
                                                                                 iteration,

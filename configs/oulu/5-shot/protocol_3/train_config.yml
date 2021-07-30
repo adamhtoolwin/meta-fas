@@ -1,10 +1,10 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 3
+gpu: 2
 
 log_tasks: True
-log_tasks_interval: 300
+log_tasks_interval: 500
 
 plot_inner_loop_loss: True
 plot_inner_loop_interval: 250
@@ -47,7 +47,7 @@ std:
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
 num_workers_val: 0  # param for validation dataloader
-log_dir: "logs/oulu/5-shot/protocol_1/"
+log_dir: "logs/oulu/5-shot/protocol_3/"
 max_epochs: 30
 
 # meta-learning hyperparameters
@@ -62,9 +62,14 @@ seed: 1
 no_adaptation: False
 
 train_df: "/root/datasets/oulu/protocol1_train.csv"
-val_df: "/root/datasets/oulu/protocol1_val.csv"
+val_df: "/root/datasets/casia-fasd/test_pruned.csv"
 train_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_train"
-val_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_val"
+val_bookkeeping_path: "datasets/bookkeeping_casia_fasd_test_pruned"
 
-# deprecated
+#train_df: "/root/datasets/casia-fasd/test_pruned.csv"
+#val_df: "/root/datasets/oulu/protocol1_train.csv"
+#train_bookkeeping_path: "datasets/bookkeeping_casia_fasd_test_pruned"
+#val_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_train"
+
+# root is deprecated
 dataset_root: "/root/datasets/oulu"

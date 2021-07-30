@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 3
+gpu: 1
 
 log_tasks: True
 log_tasks_interval: 300
@@ -61,10 +61,10 @@ maml_lr: 0.0001
 seed: 1
 no_adaptation: False
 
-train_df: "/root/datasets/oulu/protocol1_train.csv"
-val_df: "/root/datasets/oulu/protocol1_val.csv"
-train_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_train"
-val_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_val"
+train_df: "/root/datasets/oulu/protocol2_train.csv"
+val_df: "/root/datasets/oulu/protocol2_val.csv"
+train_bookkeeping_path: "datasets/bookkeeping_oulu_protocol2_train"
+val_bookkeeping_path: "datasets/bookkeeping_oulu_protocol2_val"
 
 # deprecated
 dataset_root: "/root/datasets/oulu"

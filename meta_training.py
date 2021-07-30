@@ -119,9 +119,9 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     print("Generating meta-validation tasks...")
     val_tasks = l2l.data.TaskDataset(meta_validation,
                                      task_transforms=[
-                                         l2l.data.transforms.NWays(meta_train, ways),
-                                         l2l.data.transforms.KShots(meta_train, shots + 5, replacement=True),
-                                         l2l.data.transforms.LoadData(meta_train),
+                                         l2l.data.transforms.NWays(meta_validation, ways),
+                                         l2l.data.transforms.KShots(meta_validation, shots + 5, replacement=True),
+                                         l2l.data.transforms.LoadData(meta_validation),
                                      ],
                                      num_tasks=10000)
 
@@ -221,6 +221,13 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             iteration_apcer += apcer
             iteration_npcer += npcer
 
+        if configs['log_tasks'] and iteration % configs['log_tasks_interval'] == 0:
+            adaptation_images = construct_grid(adaptation_data, nrow=2 * shots)
+            evaluation_images = construct_grid(evaluation_data, nrow=10)
+
+            writer.add_image("Sample tasks (meta-training)/Adaptation", adaptation_images, iteration)
+            writer.add_image("Sample tasks (meta-training)/Evaluation", evaluation_images, iteration)
+
         # Meta-training metrics
         iteration_error /= tps
         iteration_clf_loss /= tps
@@ -253,19 +260,19 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             # adaptation_indices[np.arange(shots*ways) * 2] = True
             evaluation_indices = torch.from_numpy(~adaptation_indices)
             adaptation_indices = torch.from_numpy(adaptation_indices)
-            adaptation_data, adaptation_labels = data[adaptation_indices], labels[adaptation_indices]
-            evaluation_data, evaluation_labels = data[evaluation_indices], labels[evaluation_indices]
+            val_adaptation_data, val_adaptation_labels = data[adaptation_indices], labels[adaptation_indices]
+            val_evaluation_data, val_evaluation_labels = data[evaluation_indices], labels[evaluation_indices]
 
             # Fast Adaptation
             if not configs['no_adaptation']:
                 for step in range(fas):
-                    outs, clf_out = learner(adaptation_data)
+                    outs, clf_out = learner(val_adaptation_data)
                     train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
                                                                             clf_criterion,
                                                                             triplet_loss,
                                                                             outs,
                                                                             clf_out,
-                                                                            adaptation_labels
+                                                                            val_adaptation_labels
                                                                             )
 
                     if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
@@ -274,9 +281,9 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                     learner.adapt(train_loss)
 
             # Compute validation loss
-            outs, clf_out = learner(evaluation_data)
+            outs, clf_out = learner(val_evaluation_data)
             val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
-                                                                  adaptation_labels)
+                                                                  val_evaluation_labels)
 
             scores = []
             cues = outs[-1]
@@ -285,7 +292,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                 scores.append(score)
 
             metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
-                                                                   evaluation_labels.cpu().long().numpy())
+                                                                   val_evaluation_labels.cpu().long().numpy())
             acer, apcer, npcer = metrics_
 
             val_iteration_error += val_loss
@@ -297,6 +304,13 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             val_iteration_acer += acer
             val_iteration_apcer += apcer
             val_iteration_npcer += npcer
+
+        if configs['log_tasks'] and iteration % configs['log_tasks_interval'] == 0:
+            val_adaptation_images = construct_grid(val_adaptation_data, nrow=2 * shots)
+            val_evaluation_images = construct_grid(val_evaluation_data, nrow=10)
+
+            writer.add_image("Sample tasks (meta-validation)/Adaptation", val_adaptation_images, iteration)
+            writer.add_image("Sample tasks (meta-validation)/Evaluation", val_evaluation_images, iteration)
 
         # Meta-validation metrics
         val_iteration_error /= tps
@@ -339,13 +353,6 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         if iteration % configs['save_weight_interval'] == 0:
             torch.save(meta_model.state_dict(), weights_directory + "epoch_" + str(iteration) + ".pth")
-
-            if configs['log_tasks']:
-                adaptation_images = construct_grid(adaptation_data, nrow=2 * shots)
-                evaluation_images = construct_grid(evaluation_data, nrow=10)
-
-                writer.add_image("Last task (adapt)", adaptation_images, iteration)
-                writer.add_image("Last task (evaluation)", evaluation_images, iteration)
 
 
 if __name__ == '__main__':

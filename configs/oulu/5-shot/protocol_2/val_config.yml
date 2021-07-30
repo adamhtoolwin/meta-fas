@@ -1,0 +1,66 @@
+#device: &device cpu
+debug: False
+no_cuda: False
+gpu: 0
+
+log_tasks: True
+log_tasks_interval: 5
+plot_inner_loop_loss: True
+plot_inner_loop_interval: 5
+
+show_imgs: False
+
+image_size: 224  # size of input image
+
+loss_coef:  # coefficients for losses
+  clf_loss: 5.0
+  reg_loss: 5.0
+  trip_loss: 1.0
+
+mean:
+  r: 0
+  g: 0
+  b: 0
+std:
+  r: 1
+  g: 1
+  b: 1
+
+#mean:
+#  r: 0.485
+#  g: 0.456
+#  b: 0.406
+#std:
+#  r: 0.229
+#  g: 0.224
+#  b: 0.225
+
+batch_size: 32  # batch size for both validation and train dataloader
+num_workers_train: 0  # param for training dataloader
+num_workers_val: 0  # param for validation dataloader
+log_dir: "logs/oulu/5-shot/protocol_1/inference/"
+max_epochs: 30
+
+# meta-learning hyperparameters
+ways: 2
+shots: 5
+tasks_per_step: 1
+fast_adaption_steps: 15
+iterations: 100
+lr: 0.005
+maml_lr: 0.0001
+seed: 1
+no_adaptation: False
+
+#train_df: "/root/datasets/casia-fasd/test_pruned.csv"
+#dataset_root: "/root/datasets/casia-fasd"
+#bookkeeping_path: "datasets/bookkeeping_casia_fasd_test_pruned"
+
+train_df: "/root/datasets/siwm/test_labels_inverted.csv"
+dataset_root: "/root/datasets/siwm"
+bookkeeping_path: "datasets/bookkeeping_siwm_test"
+
+#train_df: "/root/datasets/oulu/test.csv"
+#dataset_root: "/root/datasets/oulu"
+#bookkeeping_path: "datasets/bookkeeping_oulu_test"
+weights: "logs/oulu/5-shot/protocol_1/version_1/weights/epoch_9900.pth"
