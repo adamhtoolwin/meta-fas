@@ -77,7 +77,7 @@ def calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out, target):
     return total_loss, clf_loss, reg_loss, trip_loss
 
 
-def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5,
+def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots=1, tps=32, fas=5, val_fas=5,
          device=torch.device("cpu"),
          download_location='~/data'):
     mean = (configs['mean']['r'], configs['mean']['g'], configs['mean']['b'])
@@ -111,7 +111,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                            # l2l.data.transforms.RemapLabels(meta_train),
                                            # l2l.data.transforms.ConsecutiveLabels(meta_train),
                                        ],
-                                       num_tasks=10000)
+                                       num_tasks=20000)
 
     print("Generating meta-validation dataset using ", validation_dataset.bookkeeping_path)
     meta_validation = l2l.data.MetaDataset(validation_dataset)
@@ -123,7 +123,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                          l2l.data.transforms.KShots(meta_validation, shots + 5, replacement=True),
                                          l2l.data.transforms.LoadData(meta_validation),
                                      ],
-                                     num_tasks=10000)
+                                     num_tasks=20000)
 
     model = SCAN(pretrained=False)
     model.to(device)
@@ -265,7 +265,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
             # Fast Adaptation
             if not configs['no_adaptation']:
-                for step in range(fas):
+                for step in range(val_fas):
                     outs, clf_out = learner(val_adaptation_data)
                     train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
                                                                             clf_criterion,
@@ -420,5 +420,6 @@ if __name__ == '__main__':
          ways=configs['ways'],
          shots=configs['shots'],
          tps=configs['tasks_per_step'],
-         fas=configs['fast_adaption_steps'],
+         fas=configs['fast_adaptation_steps'],
+         val_fas=configs['val_fast_adaptation_steps'],
          device=device)

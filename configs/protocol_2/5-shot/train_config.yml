@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 0
+gpu: 2
 
 log_tasks: True
 log_tasks_interval: 300
@@ -47,13 +47,13 @@ std:
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
 num_workers_val: 0  # param for validation dataloader
-log_dir: "logs/oulu/5-shot/protocol_1/"
+log_dir: "logs/protocol_1/5-shot/"
 max_epochs: 30
 
 # meta-learning hyperparameters
 ways: 2
 shots: 5
-tasks_per_step: 2
+tasks_per_step: 4
 fast_adaptation_steps: 5
 val_fast_adaptation_steps: 5
 iterations: 50000
@@ -62,10 +62,10 @@ maml_lr: 0.0001
 seed: 1
 no_adaptation: False
 
-train_df: "/root/datasets/oulu/protocol1_train.csv"
-val_df: "/root/datasets/oulu/protocol1_val.csv"
-train_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_train"
-val_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_val"
+train_df: "/root/datasets/meta-fas-experiment/protocol_2/train.csv"
+val_df: "/root/datasets/meta-fas-experiment/protocol_2/val.csv"
+train_bookkeeping_path: "datasets/bookkeeping_protocol_2_train"
+val_bookkeeping_path: "datasets/bookkeeping_protocol_2_val"
 
 # deprecated
 dataset_root: "/root/datasets/oulu"
