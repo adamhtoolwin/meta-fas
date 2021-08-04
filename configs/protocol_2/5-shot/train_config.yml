@@ -47,7 +47,7 @@ std:
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
 num_workers_val: 0  # param for validation dataloader
-log_dir: "logs/protocol_1/5-shot/"
+log_dir: "logs/protocol_2/5-shot/"
 max_epochs: 30
 
 # meta-learning hyperparameters
