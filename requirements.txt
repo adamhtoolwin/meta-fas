@@ -1,5 +1,10 @@
-numpy
-torch
-torchvision
-learn2learn
-PyYAML
+numpy==1.20.3
+pandas==1.2.4
+torch==1.9.0
+torchvision==0.10.0
+learn2learn==0.1.5
+PyYAML==5.4.1
+facenet_pytorch
+Pillow==8.2.0
+albumentations==1.0.0
+tensorboard==2.4.1
