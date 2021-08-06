@@ -194,7 +194,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             # Compute validation loss
             outs, clf_out = learner(evaluation_data)
             val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
-                                                                  adaptation_labels)
+                                                                  evaluation_labels)
 
             scores = []
             cues = outs[-1]

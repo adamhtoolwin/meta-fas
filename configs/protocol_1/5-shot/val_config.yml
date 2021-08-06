@@ -1,10 +1,10 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 1
+gpu: 3
 
 log_tasks: True
-log_tasks_interval: 5
+log_tasks_interval: 20
 plot_inner_loop_loss: True
 plot_inner_loop_interval: 5
 
@@ -35,7 +35,7 @@ std:
 #  g: 0.224
 #  b: 0.225
 
-log_dir: "logs/oulu/5-shot/protocol_1/inference/"
+log_dir: "logs/protocol_1/5-shot/inference/"
 
 # meta-learning hyperparameters
 ways: 2
@@ -44,7 +44,7 @@ tasks_per_step: 1
 fast_adaption_steps: 15
 iterations: 100
 lr: 0.0001
-maml_lr: 0.0001
+maml_lr: 0.00001
 seed: 1
 no_adaptation: False
 
@@ -56,8 +56,11 @@ no_adaptation: False
 #dataset_root: "/root/datasets/siwm"
 #bookkeeping_path: "datasets/bookkeeping_siwm_test"
 
-train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
-bookkeeping_path: "datasets/bookkeeping_hkbu_test"
+train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
+bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
+
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
 
 # deprecated
 dataset_root: "/root/datasets/siwm"
@@ -65,6 +68,5 @@ dataset_root: "/root/datasets/siwm"
 #train_df: "/root/datasets/oulu/test.csv"
 #dataset_root: "/root/datasets/oulu"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
-weights: "logs/oulu/5-shot/protocol_1/version_9/weights/epoch_13800.pth"
 
-#weights: "logs/oulu/protocol_1/version_9/weights/epoch_13800.pth"
+weights: "logs/protocol_1/5-shot/version_2/weights/epoch_13500.pth"

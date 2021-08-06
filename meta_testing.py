@@ -71,7 +71,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     val_tasks = l2l.data.TaskDataset(meta_test,
                                      task_transforms=[
                                          l2l.data.transforms.NWays(meta_test, ways),
-                                         l2l.data.transforms.KShots(meta_test, shots + 5, replacement=False),
+                                         l2l.data.transforms.KShots(meta_test, shots + 10, replacement=False),
                                          l2l.data.transforms.LoadData(meta_test),
                                          # l2l.data.transforms.RemapLabels(meta_test),
                                          # l2l.data.transforms.ConsecutiveLabels(meta_test),
@@ -115,8 +115,11 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
             # Separate data into adaptation/evalutation sets
             adaptation_indices = np.zeros(data.size(0), dtype=bool)
+
+            # first 5 of class 1 chosen
             adaptation_indices[:shots] = True
             length = adaptation_indices.shape[0]
+            # first 5 of class 2 chosen
             adaptation_indices[math.floor(length / 2):math.floor(length / 2 + shots)] = True
 
             # adaptation_indices[np.arange(shots*ways) * 2] = True
@@ -145,7 +148,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             # Compute validation loss
             outs, clf_out = learner(evaluation_data)
             val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
-                                                                  adaptation_labels)
+                                                                  evaluation_labels)
 
             scores = []
             cues = outs[-1]

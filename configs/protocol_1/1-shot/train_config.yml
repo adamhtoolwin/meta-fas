@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 0
+gpu: 3
 
 log_tasks: True
 log_tasks_interval: 300
@@ -47,12 +47,12 @@ std:
 batch_size: 32  # batch size for both validation and train dataloader
 num_workers_train: 0  # param for training dataloader
 num_workers_val: 0  # param for validation dataloader
-log_dir: "logs/protocol_1/5-shot/"
+log_dir: "logs/protocol_1/1-shot/"
 max_epochs: 30
 
 # meta-learning hyperparameters
 ways: 2
-shots: 5
+shots: 1
 tasks_per_step: 4
 fast_adaptation_steps: 5
 val_fast_adaptation_steps: 5
