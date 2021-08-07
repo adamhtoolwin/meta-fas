@@ -80,11 +80,11 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     model = SCAN(pretrained=False)
     model.to(device)
-    meta_model = l2l.algorithms.MAML(model, lr=maml_lr, allow_nograd=False, first_order=True)
+    meta_model = l2l.algorithms.MAML(model, lr=lr, allow_nograd=False, first_order=True)
 
     meta_model.load_state_dict(torch.load(configs['weights']))
 
-    opt = optim.Adam(meta_model.parameters(), lr=lr)
+    opt = optim.Adam(meta_model.parameters(), lr=maml_lr)
     triplet_loss = TripletLoss()
     clf_criterion = nn.CrossEntropyLoss()
 

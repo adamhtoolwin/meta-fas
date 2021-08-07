@@ -12,6 +12,7 @@ For e.g. To run a 5-shot OULU meta-training experiment, `python meta-oulu.py -c 
 
 **Note**: All files when run for the first time will take some time to generate the metadataset based on the actual data.
 This metadataset should be saved in the file specified in the `bookkeeping_path` in the configs files and later runs will reuse this file.
+I think this depends on the seed given in the configs otherwise learn2learn will index the files differently each run so the seed should be set in the configs.
 
 ## Examples
 

@@ -12,6 +12,7 @@ import numpy as np
 import torchvision
 import torch
 from torch import nn, optim
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn import functional as F
 
@@ -127,8 +128,9 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     model = SCAN(pretrained=False)
     model.to(device)
-    meta_model = l2l.algorithms.MAML(model, lr=maml_lr, allow_nograd=False, first_order=True)
-    opt = optim.Adam(meta_model.parameters(), lr=lr)
+    meta_model = l2l.algorithms.MAML(model, lr=lr, allow_nograd=False, first_order=True)
+    opt = optim.Adam(meta_model.parameters(), lr=maml_lr)
+    scheduler = MultiStepLR(opt, milestones=configs['milestones'], gamma=configs['gamma'])
 
     triplet_loss = TripletLoss()
     clf_criterion = nn.CrossEntropyLoss()
@@ -242,6 +244,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         opt.zero_grad()
         iteration_error.backward()
         opt.step()
+        scheduler.step()
 
         # Meta-validation loop
         for task in range(tps):
@@ -321,6 +324,9 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         val_iteration_acer /= tps
         val_iteration_apcer /= tps
         val_iteration_npcer /= tps
+
+        current_lr = scheduler.get_last_lr()[0]
+        writer.add_scalar('Learning Rate', current_lr, iteration)
 
         # Plotting meta-training metrics
         writer.add_scalar('Losses (training)/Total', iteration_error, iteration)

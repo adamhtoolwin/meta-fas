@@ -35,11 +35,11 @@ std:
 #  g: 0.224
 #  b: 0.225
 
-log_dir: "logs/protocol_1/5-shot/inference/"
+log_dir: "logs/protocol_1/2-shot/inference/"
 
 # meta-learning hyperparameters
 ways: 2
-shots: 5
+shots: 2
 tasks_per_step: 1
 fast_adaption_steps: 15
 iterations: 100
@@ -56,11 +56,11 @@ no_adaptation: False
 #dataset_root: "/root/datasets/siwm"
 #bookkeeping_path: "datasets/bookkeeping_siwm_test"
 
-#train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
-#bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
+train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
+bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
 
-train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
-bookkeeping_path: "datasets/bookkeeping_hkbu_test"
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
 
 # deprecated
 dataset_root: "/root/datasets/siwm"
@@ -69,4 +69,4 @@ dataset_root: "/root/datasets/siwm"
 #dataset_root: "/root/datasets/oulu"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
 
-weights: "logs/protocol_1/5-shot/version_2/weights/epoch_19200.pth"
+weights: "logs/protocol_1/5-shot/version_2/weights/epoch_13500.pth"
