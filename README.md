@@ -21,7 +21,7 @@ Run `python meta_mnist.py -c configs/mnist/train_config.yml`.
 
 ## Dataset Preprocessing
 
-A script to decode HKBU-MARs is provided in [preprocessing](/preprocessing) folder.
+Various scripts to preprocess all datasets are provided in [preprocessing](/preprocessing) folder.
 
 ## References
 

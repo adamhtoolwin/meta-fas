@@ -1,16 +1,16 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 0
+gpu: 3
 
 log_tasks: True
-log_tasks_interval: 300
+log_tasks_interval: 500
 
 plot_inner_loop_loss: True
 plot_inner_loop_interval: 250
 
 image_size: 224  # size of input image
-save_weight_interval: 300  # will only save weights every n iterations
+save_weight_interval: 1000  # will only save weights every n iterations
 
 loss_coef:  # coefficients for losses
   clf_loss: 5.0
@@ -55,12 +55,19 @@ ways: 2
 shots: 5
 tasks_per_step: 2
 fast_adaptation_steps: 5
-val_fast_adaptation_steps: 5
+val_fast_adaptation_steps: 10
 iterations: 50000
-lr: 0.0001
-maml_lr: 0.0001
+lr: 0.01
+maml_lr: 0.001
 seed: 1
 no_adaptation: False
+
+milestones:  # MultiStepLR scheduler params
+  - 3000
+  - 6000
+  - 10000
+  - 15000
+gamma: 0.1
 
 train_df: "/root/datasets/oulu/protocol1_train.csv"
 val_df: "/root/datasets/oulu/protocol1_val.csv"

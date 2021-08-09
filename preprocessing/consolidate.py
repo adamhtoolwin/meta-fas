@@ -15,8 +15,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    train_oulu_path = args.input_folder + "protocol1_train.csv"
-    celeba_path = args.input_folder + "celebA_final.csv"
+    train_oulu_path = args.input_folder + "protocol2_train.csv"
+    celeba_path = args.input_folder + "celebA_final_pruned.csv"
 
     train_oulu_df = pd.read_csv(train_oulu_path)
     celeba_df = pd.read_csv(celeba_path)
