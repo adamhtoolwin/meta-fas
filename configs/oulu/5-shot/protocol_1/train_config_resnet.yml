@@ -1,0 +1,73 @@
+#device: &device cpu
+debug: False
+no_cuda: False
+gpu: 2
+
+log_tasks: True
+log_tasks_interval: 500
+
+plot_inner_loop_loss: True
+plot_inner_loop_interval: 250
+
+image_size: 224  # size of input image
+save_weight_interval: 1000  # will only save weights every n iterations
+
+loss_coef:  # coefficients for losses
+  clf_loss: 5.0
+  reg_loss: 5.0
+  trip_loss: 1.0
+
+mean:
+  r: 0
+  g: 0
+  b: 0
+std:
+  r: 1
+  g: 1
+  b: 1
+
+#mean:
+#  r: 0.485
+#  g: 0.456
+#  b: 0.406
+#std:
+#  r: 0.229
+#  g: 0.224
+#  b: 0.225
+
+#mean:
+#  r: 100
+#  g: 100
+#  b: 100
+#std:
+#  r: 50
+#  g: 50
+#  b: 50
+
+log_dir: "logs/oulu/5-shot/protocol_1/resnet18/"
+
+# meta-learning hyperparameters
+ways: 2
+shots: 5
+tasks_per_step: 4
+fast_adaptation_steps: 5
+val_fast_adaptation_steps: 10
+iterations: 30000
+lr: 0.01
+maml_lr: 0.001
+seed: 1
+no_adaptation: False
+
+milestones:  # MultiStepLR scheduler params
+  - 5000
+  - 20000
+  - 25000
+gamma: 0.1
+
+train_df: "/root/datasets/oulu/protocol1_train.csv"
+val_df: "/root/datasets/oulu/protocol1_val.csv"
+train_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_train"
+val_bookkeeping_path: "datasets/bookkeeping_oulu_protocol1_val"
+
+# deprecated
+dataset_root: "/root/datasets/oulu"

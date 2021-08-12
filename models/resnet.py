@@ -142,8 +142,8 @@ class ResNet18Encoder(nn.Module):
         self.resnet18.fc = Identity()
         self.out_indices = out_indices
 
-        if pretrained:
-            self._freeze_encoder()
+        # if pretrained:
+        #     self._freeze_encoder()
 
     def _freeze_encoder(self):
         for p in self.resnet18.parameters():
@@ -185,8 +185,9 @@ class ResNet18Classifier(nn.Module):
             in_features=self.resnet18.fc.in_features, out_features=num_classes
         )
         self.drop = nn.Dropout(dropout)
-        if pretrained:
-            self._freeze_clf()
+
+        # if pretrained:
+        #     self._freeze_clf()
 
     def _freeze_clf(self):
         for p in self.resnet18.parameters():

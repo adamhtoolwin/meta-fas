@@ -125,18 +125,15 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                          l2l.data.transforms.LoadData(meta_validation),
                                      ],
                                      num_tasks=20000)
-
     if configs['pretrained']:
-        model = SCAN(pretrained=True)
+        model = ResNet18Classifier(pretrained=True)
     else:
-        model = SCAN(pretrained=False)
+        model = ResNet18Classifier(pretrained=False)
 
     model.to(device)
     meta_model = l2l.algorithms.MAML(model, lr=lr, allow_nograd=False, first_order=True)
     opt = optim.Adam(meta_model.parameters(), lr=maml_lr)
     scheduler = MultiStepLR(opt, milestones=configs['milestones'], gamma=configs['gamma'])
-
-    triplet_loss = TripletLoss()
     clf_criterion = nn.CrossEntropyLoss()
 
     print("Starting meta-training...")
@@ -181,14 +178,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
             # Fast Adaptation
             for step in range(fas):
-                outs, clf_out = learner(adaptation_data)
-                train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
-                                                                        clf_criterion,
-                                                                        triplet_loss,
-                                                                        outs,
-                                                                        clf_out,
-                                                                        adaptation_labels
-                                                                        )
+                outs = learner(adaptation_data)
+                train_loss = clf_criterion(outs, adaptation_labels)
 
                 if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
                     writer.add_scalar('Adaptation Loss (training)/Iteration ' + str(iteration) + ' Task ' + str(task), train_loss,
@@ -198,31 +189,14 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                 learner.adapt(train_loss)
 
             # Compute validation loss
-            outs, clf_out = learner(evaluation_data)
-            val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
-                                                                  evaluation_labels)
+            predictions = learner(evaluation_data)
+            valid_error = clf_criterion(predictions, evaluation_labels)
+            valid_error /= len(evaluation_data)
+            valid_accuracy = accuracy(predictions, evaluation_labels)
+            acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
 
-            scores = []
-            cues = outs[-1]
-            for i in range(cues.shape[0]):
-                score = 1.0 - cues[i,].mean().cpu().item()
-                scores.append(score)
-
-            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
-                                                                   evaluation_labels.cpu().long().numpy())
-            acer, apcer, npcer = metrics_
-
-            # valid_error = loss_func(predictions, evaluation_labels)
-            # valid_error /= len(evaluation_data)
-            # valid_accuracy = accuracy(predictions, evaluation_labels)
-            # acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
-
-            iteration_error += val_loss
-            iteration_clf_loss += clf_loss
-            iteration_triplet_loss += trip_loss
-            iteration_reg_loss += reg_loss
-
-            iteration_acc += val_acc
+            iteration_error += valid_error
+            iteration_acc += valid_accuracy
             iteration_acer += acer
             iteration_apcer += apcer
             iteration_npcer += npcer
@@ -273,14 +247,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             # Fast Adaptation
             if not configs['no_adaptation']:
                 for step in range(val_fas):
-                    outs, clf_out = learner(val_adaptation_data)
-                    train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
-                                                                            clf_criterion,
-                                                                            triplet_loss,
-                                                                            outs,
-                                                                            clf_out,
-                                                                            val_adaptation_labels
-                                                                            )
+                    outs = learner(val_adaptation_data)
+                    train_loss = clf_criterion(outs, val_adaptation_labels)
 
                     if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
                         writer.add_scalar('Adaptation Loss (validation)/Iteration ' + str(iteration) + ' Task ' + str(task),
@@ -288,29 +256,19 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                     learner.adapt(train_loss)
 
             # Compute validation loss
-            outs, clf_out = learner(val_evaluation_data)
-            val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
-                                                                  val_evaluation_labels)
+            predictions = learner(val_evaluation_data)
+            valid_error = clf_criterion(predictions, val_evaluation_labels)
+            valid_error /= len(val_evaluation_data)
+            valid_accuracy = accuracy(predictions, val_evaluation_labels)
+            acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(),
+                                                     val_evaluation_labels.cpu())
 
-            scores = []
-            cues = outs[-1]
-            for i in range(cues.shape[0]):
-                score = 1.0 - cues[i,].mean().cpu().item()
-                scores.append(score)
-
-            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
-                                                                   val_evaluation_labels.cpu().long().numpy())
-            acer, apcer, npcer = metrics_
-
-            val_iteration_error += val_loss
-            val_iteration_clf_loss += clf_loss
-            val_iteration_triplet_loss += trip_loss
-            val_iteration_reg_loss += reg_loss
-
-            val_iteration_acc += val_acc
+            val_iteration_error += valid_error
+            val_iteration_acc += valid_accuracy
             val_iteration_acer += acer
             val_iteration_apcer += apcer
             val_iteration_npcer += npcer
+
 
         if configs['log_tasks'] and iteration % configs['log_tasks_interval'] == 0:
             val_adaptation_images = construct_grid(val_adaptation_data, nrow=2 * shots)
@@ -334,9 +292,6 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         # Plotting meta-training metrics
         writer.add_scalar('Losses (training)/Total', iteration_error, iteration)
-        writer.add_scalar('Losses (training)/classifier loss', iteration_clf_loss, iteration)
-        writer.add_scalar('Losses (training)/triplet loss', iteration_triplet_loss, iteration)
-        writer.add_scalar('Losses (training)/regression loss', iteration_reg_loss, iteration)
         writer.add_scalar('Metrics (training)/Accuracy', iteration_acc, iteration)
         writer.add_scalar('Metrics (training)/acer', iteration_acer, iteration)
         writer.add_scalar('Metrics (training)/apcer', iteration_apcer, iteration)
@@ -344,9 +299,6 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         # Plotting meta-validation metrics
         writer.add_scalar('Losses (validation)/Total', val_iteration_error, iteration)
-        writer.add_scalar('Losses (validation)/classifier loss', val_iteration_clf_loss, iteration)
-        writer.add_scalar('Losses (validation)/triplet loss', val_iteration_triplet_loss, iteration)
-        writer.add_scalar('Losses (validation)/regression loss', val_iteration_reg_loss, iteration)
         writer.add_scalar('Metrics (validation)/Accuracy', val_iteration_acc, iteration)
         writer.add_scalar('Metrics (validation)/acer', val_iteration_acer, iteration)
         writer.add_scalar('Metrics (validation)/apcer', val_iteration_apcer, iteration)
