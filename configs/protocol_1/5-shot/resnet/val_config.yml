@@ -59,11 +59,11 @@ no_adaptation: False
 #train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
 #bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
 
-#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
-#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
-
 train_df: "/root/datasets/HKBU-V2/test.csv"
 bookkeeping_path: "datasets/bookkeeping_hkbu_test_01"
+
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
 
 # deprecated
 dataset_root: "/root/datasets/siwm"
@@ -72,4 +72,4 @@ dataset_root: "/root/datasets/siwm"
 #dataset_root: "/root/datasets/oulu"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
 
-weights: "logs/protocol_1/5-shot/pruned/version_2/weights/epoch_7000.pth"
+weights: "logs/protocol_1/5-shot/pruned/resnet18/version_1/weights/epoch_15000.pth"

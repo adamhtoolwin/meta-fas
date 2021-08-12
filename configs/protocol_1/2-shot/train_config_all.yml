@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 1
+gpu: 2
 
 log_tasks: True
 log_tasks_interval: 500
@@ -44,25 +44,29 @@ std:
 #  g: 50
 #  b: 50
 
+batch_size: 32  # batch size for both validation and train dataloader
+num_workers_train: 0  # param for training dataloader
+num_workers_val: 0  # param for validation dataloader
 log_dir: "logs/protocol_1/2-shot/"
-pretrained: True
+max_epochs: 30
 
 # meta-learning hyperparameters
 ways: 2
 shots: 2
-tasks_per_step: 2
+tasks_per_step: 4
 fast_adaptation_steps: 5
-val_fast_adaptation_steps: 10
-iterations: 30000
+val_fast_adaptation_steps: 5
+iterations: 50000
 lr: 0.01
 maml_lr: 0.001
 seed: 1
 no_adaptation: False
 
 milestones:  # MultiStepLR scheduler params
-  - 5000
+  - 2000
+  - 10000
   - 20000
-  - 25000
+  - 30000
 gamma: 0.1
 
 train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"

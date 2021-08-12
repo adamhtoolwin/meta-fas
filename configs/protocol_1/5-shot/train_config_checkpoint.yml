@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 1
+gpu: 3
 
 log_tasks: True
 log_tasks_interval: 500
@@ -44,31 +44,32 @@ std:
 #  g: 50
 #  b: 50
 
-log_dir: "logs/protocol_1/2-shot/"
+log_dir: "logs/protocol_1/5-shot/pruned/"
 pretrained: True
 
 # meta-learning hyperparameters
 ways: 2
-shots: 2
+shots: 5
 tasks_per_step: 2
 fast_adaptation_steps: 5
 val_fast_adaptation_steps: 10
-iterations: 30000
+iterations: 23000
 lr: 0.01
-maml_lr: 0.001
+maml_lr: 0.0001
 seed: 1
 no_adaptation: False
 
 milestones:  # MultiStepLR scheduler params
-  - 5000
-  - 20000
-  - 25000
+  - 13000
+  - 18000
 gamma: 0.1
 
-train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
+train_df: "/root/datasets/meta-fas-experiment/protocol_1/train_pruned.csv"
 val_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
-train_bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
-val_bookkeeping_path: "datasets/bookkeeping_protocol_1_val"
+train_bookkeeping_path: "datasets/bookkeeping_protocol_1_train_pruned"
+val_bookkeeping_path: "datasets/bookkeeping_protocol_1_val_pruned"
+
+checkpoint: "/root/meta-fas/logs/protocol_1/5-shot/pruned/version_2/weights/epoch_7000.pth"
 
 # deprecated
 dataset_root: "/root/datasets/oulu"

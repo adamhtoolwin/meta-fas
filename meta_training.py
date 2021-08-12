@@ -133,6 +133,11 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     model.to(device)
     meta_model = l2l.algorithms.MAML(model, lr=lr, allow_nograd=False, first_order=True)
+
+    if 'checkpoint' in configs:
+        print("Loading model from ", configs['checkpoint'])
+        meta_model.load_state_dict(torch.load(configs['checkpoint']))
+
     opt = optim.Adam(meta_model.parameters(), lr=maml_lr)
     scheduler = MultiStepLR(opt, milestones=configs['milestones'], gamma=configs['gamma'])
 
@@ -383,8 +388,12 @@ if __name__ == '__main__':
     version = get_latest_version(log_dir)
 
     version_directory = log_dir + "version_" + str(version)
+
     if not os.path.isdir(version_directory):
         os.makedirs(version_directory)
+
+    if 'checkpoint' in configs:
+        checkout = open(version_directory + '/CHECKPOINT', 'w').close()
 
     weights_directory = version_directory + "/weights/"
     if not os.path.isdir(weights_directory):

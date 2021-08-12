@@ -71,14 +71,14 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     val_tasks = l2l.data.TaskDataset(meta_test,
                                      task_transforms=[
                                          l2l.data.transforms.NWays(meta_test, ways),
-                                         l2l.data.transforms.KShots(meta_test, shots * 3, replacement=False),
+                                         l2l.data.transforms.KShots(meta_test, shots * 4, replacement=False),
                                          l2l.data.transforms.LoadData(meta_test),
                                          # l2l.data.transforms.RemapLabels(meta_test),
                                          # l2l.data.transforms.ConsecutiveLabels(meta_test),
                                      ],
                                      num_tasks=-1)
 
-    model = SCAN(pretrained=False)
+    model = ResNet18Classifier(pretrained=False)
     meta_model = l2l.algorithms.MAML(model, lr=lr, allow_nograd=False, first_order=True)
 
     print("Loading model from ", configs['weights'])
@@ -96,6 +96,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         'npcer': 0.0
     }
 
+    print("Starting meta-testing...")
     for iteration in range(iterations):
         iteration_error = 0.0
         iteration_clf_loss = 0.0
@@ -132,14 +133,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             # Fast Adaptation
             if not configs['no_adaptation']:
                 for step in range(fas):
-                    outs, clf_out = learner(adaptation_data)
-                    train_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs,
-                                                                            clf_criterion,
-                                                                            triplet_loss,
-                                                                            outs,
-                                                                            clf_out,
-                                                                            adaptation_labels
-                                                                            )
+                    outs = learner(adaptation_data)
+                    train_loss = clf_criterion(outs, adaptation_labels)
 
                     if configs['plot_inner_loop_loss'] and iteration % configs['plot_inner_loop_interval'] == 0:
                         writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task),
@@ -147,26 +142,15 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                     learner.adapt(train_loss)
 
             # Compute validation loss
-            outs, clf_out = learner(evaluation_data)
-            val_loss, clf_loss, reg_loss, trip_loss = calc_losses(configs, clf_criterion, triplet_loss, outs, clf_out,
-                                                                  evaluation_labels)
+            predictions = learner(evaluation_data)
+            valid_error = clf_criterion(predictions, evaluation_labels)
+            valid_error /= len(evaluation_data)
+            valid_accuracy = accuracy(predictions, evaluation_labels)
+            acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(),
+                                                     evaluation_labels.cpu())
 
-            scores = []
-            cues = outs[-1]
-            for i in range(cues.shape[0]):
-                score = 1.0 - cues[i,].mean().cpu().item()
-                scores.append(score)
-
-            metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
-                                                                   evaluation_labels.cpu().long().numpy())
-            acer, apcer, npcer = metrics_
-
-            iteration_error += val_loss
-            iteration_clf_loss += clf_loss
-            iteration_triplet_loss += trip_loss
-            iteration_reg_loss += reg_loss
-
-            iteration_acc += val_acc
+            iteration_error += valid_error
+            iteration_acc += valid_accuracy
             iteration_acer += acer
             iteration_apcer += apcer
             iteration_npcer += npcer
