@@ -1,0 +1,75 @@
+#device: &device cpu
+debug: False
+no_cuda: False
+gpu: 1
+
+log_tasks: True
+log_tasks_interval: 500
+
+plot_inner_loop_loss: True
+plot_inner_loop_interval: 250
+
+image_size: 224  # size of input image
+save_weight_interval: 500  # will only save weights every n iterations
+
+loss_coef:  # coefficients for losses
+  clf_loss: 5.0
+  reg_loss: 5.0
+  trip_loss: 1.0
+
+mean:
+  r: 0
+  g: 0
+  b: 0
+std:
+  r: 1
+  g: 1
+  b: 1
+
+#mean:
+#  r: 0.485
+#  g: 0.456
+#  b: 0.406
+#std:
+#  r: 0.229
+#  g: 0.224
+#  b: 0.225
+
+#mean:
+#  r: 100
+#  g: 100
+#  b: 100
+#std:
+#  r: 50
+#  g: 50
+#  b: 50
+
+log_dir: "logs/protocol_1/10-shot/"
+pretrained: True
+
+# meta-learning hyperparameters
+ways: 2
+shots: 10
+tasks_per_step: 2
+fast_adaptation_steps: 5
+val_fast_adaptation_steps: 10
+iterations: 30000
+lr: 0.01
+maml_lr: 0.001
+seed: 1
+no_adaptation: False
+sample_count_factor: 2
+
+milestones:  # MultiStepLR scheduler params
+  - 5000
+  - 20000
+  - 25000
+gamma: 0.1
+
+train_df: "/root/datasets/meta-fas-experiment/protocol_1/train_pruned.csv"
+val_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
+train_bookkeeping_path: "datasets/bookkeeping_protocol_1_train_pruned"
+val_bookkeeping_path: "datasets/bookkeeping_protocol_1_val"
+
+# deprecated
+dataset_root: "/root/datasets/oulu"

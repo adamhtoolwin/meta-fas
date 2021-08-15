@@ -1,0 +1,78 @@
+#device: &device cpu
+debug: False
+no_cuda: False
+gpu: 0
+
+log_tasks: True
+log_tasks_interval: 50
+plot_inner_loop_loss: True
+plot_inner_loop_interval: 10
+
+show_imgs: False
+
+image_size: 224  # size of input image
+
+loss_coef:  # coefficients for losses
+  clf_loss: 5.0
+  reg_loss: 5.0
+  trip_loss: 1.0
+
+mean:
+  r: 0
+  g: 0
+  b: 0
+std:
+  r: 1
+  g: 1
+  b: 1
+
+#mean:
+#  r: 0.485
+#  g: 0.456
+#  b: 0.406
+#std:
+#  r: 0.229
+#  g: 0.224
+#  b: 0.225
+
+log_dir: "logs/protocol_1/10-shot/inference/"
+
+# meta-learning hyperparameters
+sample_count_factor: 2  # no. of samples per task = shots * sample_count_factor (shots for training, the rest for eval)
+ways: 2
+shots: 10
+tasks_per_step: 1
+fast_adaption_steps: 10
+iterations: 200
+lr: 0.01
+maml_lr: 0.001
+seed: 1
+no_adaptation: False
+
+#train_df: "/root/datasets/casia-fasd/test_pruned.csv"
+#dataset_root: "/root/datasets/casia-fasd"
+#bookkeeping_path: "datasets/bookkeeping_casia_fasd_test_pruned"
+
+#train_df: "/root/datasets/siwm/test_labels_inverted.csv"
+#dataset_root: "/root/datasets/siwm"
+#bookkeeping_path: "datasets/bookkeeping_siwm_test"
+
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
+#bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
+
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
+
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
+#bookkeeping_path: "datasets/bookkeeping_protocol_1_val_infer"
+
+#train_df: "/root/datasets/HKBU-V2/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test_01"
+
+# deprecated
+dataset_root: "/root/datasets/siwm"
+
+#train_df: "/root/datasets/oulu/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_oulu_test"
+
+weights: "logs/protocol_1/5-shot/pruned/version_3/weights/epoch_6000.pth"
