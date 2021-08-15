@@ -23,6 +23,18 @@ Run `python meta_mnist.py -c configs/mnist/train_config.yml`.
 
 Various scripts to preprocess all datasets are provided in [preprocessing](/preprocessing) folder.
 
+## Models
+
+1. LGSC Model (Feng et. al., 2020)
+2. Resnet18
+
+Meta-training and meta-testing scripts for both models are given.
+
+### Checkpointing
+
+Pass the `checkpoint` flag in the configs to the weights to restart training from that checkpoint. 
+Continued log folders will be marked with a `CHECKPOINT` file.
+
 ## References
 
 1. Finn, C., Abbeel, P., & Levine, S. (2017, July). Model-agnostic meta-learning for fast adaptation of deep networks. 

@@ -41,12 +41,12 @@ log_dir: "logs/protocol_1/5-shot/inference/"
 ways: 2
 shots: 5
 tasks_per_step: 1
-fast_adaption_steps: 15
+fast_adaption_steps: 10
 iterations: 200
-lr: 0.001
+lr: 0.01
 maml_lr: 0.001
 seed: 1
-no_adaptation: False
+no_adaptation: True
 
 #train_df: "/root/datasets/casia-fasd/test_pruned.csv"
 #dataset_root: "/root/datasets/casia-fasd"
@@ -59,11 +59,14 @@ no_adaptation: False
 #train_df: "/root/datasets/meta-fas-experiment/protocol_1/train.csv"
 #bookkeeping_path: "datasets/bookkeeping_protocol_1_train"
 
-train_df: "/root/datasets/HKBU-V2/test.csv"
-bookkeeping_path: "datasets/bookkeeping_hkbu_test_01"
+#train_df: "/root/datasets/HKBU-V2/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test_01"
 
 #train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
 #bookkeeping_path: "datasets/bookkeeping_hkbu_test"
+
+train_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
+bookkeeping_path: "datasets/bookkeeping_protocol_1_val_infer"
 
 # deprecated
 dataset_root: "/root/datasets/siwm"
@@ -72,4 +75,4 @@ dataset_root: "/root/datasets/siwm"
 #dataset_root: "/root/datasets/oulu"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
 
-weights: "logs/protocol_1/5-shot/pruned/resnet18/version_1/weights/epoch_15000.pth"
+weights: "logs/protocol_1/5-shot/pruned/resnet18/version_2/weights/epoch_14000.pth"
