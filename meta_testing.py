@@ -114,6 +114,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             data = data.to(device)
             labels = labels.to(device)
 
+            live_count = len(labels[labels == 1])
+            spoof_count = len(labels[labels == 0])
+            assert live_count == spoof_count
+
             # Separate data into adaptation/evalutation sets
             adaptation_indices = np.zeros(data.size(0), dtype=bool)
 

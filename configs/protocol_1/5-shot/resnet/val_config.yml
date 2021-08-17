@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 0
+gpu: 1
 
 log_tasks: True
 log_tasks_interval: 50
@@ -38,15 +38,16 @@ std:
 log_dir: "logs/protocol_1/5-shot/inference/"
 
 # meta-learning hyperparameters
+sample_count_factor: 2  # no. of samples per task = shots * sample_count_factor (shots for training, the rest for eval)
 ways: 2
 shots: 5
 tasks_per_step: 1
 fast_adaption_steps: 10
-iterations: 200
+iterations: 500
 lr: 0.01
 maml_lr: 0.001
 seed: 1
-no_adaptation: True
+no_adaptation: False
 
 #train_df: "/root/datasets/casia-fasd/test_pruned.csv"
 #dataset_root: "/root/datasets/casia-fasd"
@@ -62,11 +63,11 @@ no_adaptation: True
 #train_df: "/root/datasets/HKBU-V2/test.csv"
 #bookkeeping_path: "datasets/bookkeeping_hkbu_test_01"
 
-#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
-#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
+train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
+bookkeeping_path: "datasets/bookkeeping_hkbu_test"
 
-train_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
-bookkeeping_path: "datasets/bookkeeping_protocol_1_val_infer"
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
+#bookkeeping_path: "datasets/bookkeeping_protocol_1_val_infer"
 
 # deprecated
 dataset_root: "/root/datasets/siwm"

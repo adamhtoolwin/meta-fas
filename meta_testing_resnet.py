@@ -71,7 +71,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     val_tasks = l2l.data.TaskDataset(meta_test,
                                      task_transforms=[
                                          l2l.data.transforms.NWays(meta_test, ways),
-                                         l2l.data.transforms.KShots(meta_test, shots * 4, replacement=False),
+                                         l2l.data.transforms.KShots(meta_test, shots * configs['sample_count_factor'], replacement=True),
                                          l2l.data.transforms.LoadData(meta_test),
                                          # l2l.data.transforms.RemapLabels(meta_test),
                                          # l2l.data.transforms.ConsecutiveLabels(meta_test),
@@ -115,6 +115,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             data = data.to(device)
             labels = labels.to(device)
 
+            live_count = len(labels[labels == 1])
+            spoof_count = len(labels[labels == 0])
+            assert live_count == spoof_count
+
             # Separate data into adaptation/evalutation sets
             adaptation_indices = np.zeros(data.size(0), dtype=bool)
 
@@ -140,6 +144,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                         writer.add_scalar('Adaptation Loss/Iteration ' + str(iteration) + ' Task ' + str(task),
                                           train_loss, step)
                     learner.adapt(train_loss)
+
+            else:
+                evaluation_data = data
+                evaluation_labels = labels
 
             # Compute validation loss
             predictions = learner(evaluation_data)
