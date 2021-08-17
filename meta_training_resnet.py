@@ -107,7 +107,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     train_tasks = l2l.data.TaskDataset(meta_train,
                                        task_transforms=[
                                            l2l.data.transforms.NWays(meta_train, ways),
-                                           l2l.data.transforms.KShots(meta_train, shots * 3, replacement=True),
+                                           l2l.data.transforms.KShots(meta_train, shots * configs['sample_count_factor'], replacement=True),
                                            l2l.data.transforms.LoadData(meta_train),
                                            # l2l.data.transforms.RemapLabels(meta_train),
                                            # l2l.data.transforms.ConsecutiveLabels(meta_train),
@@ -121,10 +121,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
     val_tasks = l2l.data.TaskDataset(meta_validation,
                                      task_transforms=[
                                          l2l.data.transforms.NWays(meta_validation, ways),
-                                         l2l.data.transforms.KShots(meta_validation, shots + 10, replacement=True),
+                                         l2l.data.transforms.KShots(meta_validation, shots * configs['sample_count_factor'], replacement=True),
                                          l2l.data.transforms.LoadData(meta_validation),
                                      ],
-                                     num_tasks=20000)
+                                     num_tasks=1000)
     if configs['pretrained']:
         model = ResNet18Classifier(pretrained=True)
     else:
@@ -226,7 +226,12 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         # Take the meta-learning step
         opt.zero_grad()
         iteration_error.backward()
+
+        for p in meta_model.parameters():
+            p.grad.data.mul_(1.0 / tps)
+
         opt.step()
+
         scheduler.step()
 
         # Meta-validation loop

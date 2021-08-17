@@ -23,8 +23,9 @@ if __name__ == '__main__':
     pbar = tqdm(df.iterrows())
     for index, row in pbar:
         lighting_variation = row['path'].split("/")[-2].split("_")[1]
+        input_sensor = row['path'].split("/")[-2].split("_")[0]
 
-        if lighting_variation == '01':
+        if lighting_variation == '01' and input_sensor != "03":
             out_indices.append(index)
 
         if args.debug:
