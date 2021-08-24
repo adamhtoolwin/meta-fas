@@ -146,6 +146,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     print("Starting meta-training...")
     for iteration in range(iterations):
+        opt.zero_grad()
+
         iteration_error = 0.0
         iteration_clf_loss = 0.0
         iteration_triplet_loss = 0.0
@@ -166,6 +168,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         # Meta-training loop
         for task in range(tps):
+
             learner = meta_model.clone()
             train_task = train_tasks.sample()
             data, labels = train_task
@@ -216,21 +219,24 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             metrics_, best_thr, val_acc = metrics.eval_from_scores(np.array(scores),
                                                                    evaluation_labels.cpu().long().numpy())
             acer, apcer, npcer = metrics_
+            val_loss.backward()
 
             # valid_error = loss_func(predictions, evaluation_labels)
             # valid_error /= len(evaluation_data)
             # valid_accuracy = accuracy(predictions, evaluation_labels)
             # acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
 
-            iteration_error += val_loss
-            iteration_clf_loss += clf_loss
-            iteration_triplet_loss += trip_loss
-            iteration_reg_loss += reg_loss
+            iteration_error += float(val_loss)
+            iteration_clf_loss += float(clf_loss)
+            iteration_triplet_loss += float(trip_loss)
+            iteration_reg_loss += float(reg_loss)
 
             iteration_acc += val_acc
             iteration_acer += acer
             iteration_apcer += apcer
             iteration_npcer += npcer
+
+            # torch.cuda.empty_cache()
 
         if configs['log_tasks'] and iteration % configs['log_tasks_interval'] == 0:
             adaptation_images = construct_grid(adaptation_data, nrow=2 * shots)
@@ -250,13 +256,18 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         iteration_npcer /= tps
 
         # Take the meta-learning step
-        opt.zero_grad()
-        iteration_error.backward()
+        # opt.zero_grad()
+        # iteration_error.backward()
+
+        for p in meta_model.parameters():
+            p.grad.data.mul_(1.0 / tps)
+
         opt.step()
         scheduler.step()
 
         # Meta-validation loop
         for task in range(tps):
+
             learner = meta_model.clone()
             val_task = val_tasks.sample()
             data, labels = val_task
@@ -307,15 +318,17 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                    val_evaluation_labels.cpu().long().numpy())
             acer, apcer, npcer = metrics_
 
-            val_iteration_error += val_loss
-            val_iteration_clf_loss += clf_loss
-            val_iteration_triplet_loss += trip_loss
-            val_iteration_reg_loss += reg_loss
+            val_iteration_error += float(val_loss)
+            val_iteration_clf_loss += float(clf_loss)
+            val_iteration_triplet_loss += float(trip_loss)
+            val_iteration_reg_loss += float(reg_loss)
 
             val_iteration_acc += val_acc
             val_iteration_acer += acer
             val_iteration_apcer += apcer
             val_iteration_npcer += npcer
+
+            # torch.cuda.empty_cache()
 
         if configs['log_tasks'] and iteration % configs['log_tasks_interval'] == 0:
             val_adaptation_images = construct_grid(val_adaptation_data, nrow=2 * shots)
@@ -360,9 +373,9 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f} Val Loss : {:.3f} Val Acc : {:.3f}'.format(
             configs['version'],
             iteration,
-            iteration_error.item(),
+            iteration_error,
             iteration_acc,
-            val_iteration_error.item(),
+            val_iteration_error,
             val_iteration_acc)
         )
 

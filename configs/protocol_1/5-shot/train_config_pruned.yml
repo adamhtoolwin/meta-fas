@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 3
+gpu: 1
 
 log_tasks: True
 log_tasks_interval: 500
@@ -50,7 +50,7 @@ pretrained: True
 # meta-learning hyperparameters
 ways: 2
 shots: 5
-tasks_per_step: 2
+tasks_per_step: 4
 fast_adaptation_steps: 5
 val_fast_adaptation_steps: 10
 iterations: 30000
@@ -58,6 +58,7 @@ lr: 0.01
 maml_lr: 0.001
 seed: 1
 no_adaptation: False
+sample_count_factor: 2
 
 milestones:  # MultiStepLR scheduler params
   - 5000

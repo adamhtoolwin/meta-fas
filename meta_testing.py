@@ -168,10 +168,10 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
                                                                    evaluation_labels.cpu().long().numpy())
             acer, apcer, npcer = metrics_
 
-            iteration_error += val_loss
-            iteration_clf_loss += clf_loss
-            iteration_triplet_loss += trip_loss
-            iteration_reg_loss += reg_loss
+            iteration_error += float(val_loss)
+            iteration_clf_loss += float(clf_loss)
+            iteration_triplet_loss += float(trip_loss)
+            iteration_reg_loss += float(reg_loss)
 
             iteration_acc += val_acc
             iteration_acer += acer
@@ -200,7 +200,7 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
         print('Version: {:d} Iteration: {:d} Loss : {:.3f} Acc : {:.3f}'.format(configs['version'],
                                                                                 iteration,
-                                                                                iteration_error.item(),
+                                                                                iteration_error,
                                                                                 iteration_acc)
               )
 

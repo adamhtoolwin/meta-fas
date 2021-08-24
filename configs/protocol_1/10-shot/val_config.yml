@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 1
+gpu: 3
 
 log_tasks: True
 log_tasks_interval: 50
@@ -38,10 +38,10 @@ std:
 log_dir: "logs/protocol_1/10-shot/inference/"
 
 # meta-learning hyperparameters
-sample_count_factor: 2  # no. of samples per task = shots * sample_count_factor (shots for training, the rest for eval)
+sample_count_factor: 2 # no. of samples per task = shots * sample_count_factor (shots for training, the rest for eval)
 ways: 2
 shots: 10
-tasks_per_step: 1
+tasks_per_step: 4
 fast_adaption_steps: 10
 iterations: 500
 lr: 0.01
@@ -78,4 +78,6 @@ dataset_root: "/root/datasets/siwm"
 #train_df: "/root/datasets/oulu/test.csv"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
 
-weights: "logs/protocol_1/10-shot/version_1/weights/epoch_29000.pth"
+#weights: "logs/protocol_1/10-shot/version_3/weights/epoch_24000.pth"
+#weights: "logs/protocol_1/10-shot/version_1/weights/epoch_29000.pth"
+weights: "logs/protocol_1/10-shot/version_7/weights/epoch_1500.pth"

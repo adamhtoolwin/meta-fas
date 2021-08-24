@@ -143,6 +143,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
 
     print("Starting meta-training...")
     for iteration in range(iterations):
+        opt.zero_grad()
+
         iteration_error = 0.0
         iteration_clf_loss = 0.0
         iteration_triplet_loss = 0.0
@@ -200,6 +202,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
             valid_accuracy = accuracy(predictions, evaluation_labels)
             acer, apcer, npcer = metrics.get_metrics(predictions.argmax(dim=1).cpu().numpy(), evaluation_labels.cpu())
 
+            valid_error.backward()
+
             iteration_error += valid_error
             iteration_acc += valid_accuracy
             iteration_acer += acer
@@ -224,8 +228,8 @@ def main(configs, writer, lr=0.005, maml_lr=0.01, iterations=1000, ways=5, shots
         iteration_npcer /= tps
 
         # Take the meta-learning step
-        opt.zero_grad()
-        iteration_error.backward()
+        # opt.zero_grad()
+        # iteration_error.backward()
 
         for p in meta_model.parameters():
             p.grad.data.mul_(1.0 / tps)

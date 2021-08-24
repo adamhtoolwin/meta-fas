@@ -1,7 +1,7 @@
 #device: &device cpu
 debug: False
 no_cuda: False
-gpu: 1
+gpu: 2
 
 log_tasks: True
 log_tasks_interval: 50
@@ -41,7 +41,7 @@ log_dir: "logs/protocol_1/5-shot/inference/"
 sample_count_factor: 2  # no. of samples per task = shots * sample_count_factor (shots for training, the rest for eval)
 ways: 2
 shots: 5
-tasks_per_step: 1
+tasks_per_step: 4
 fast_adaption_steps: 10
 iterations: 500
 lr: 0.01
@@ -63,11 +63,14 @@ no_adaptation: False
 #train_df: "/root/datasets/HKBU-V2/test.csv"
 #bookkeeping_path: "datasets/bookkeeping_hkbu_test_01"
 
-train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
-bookkeeping_path: "datasets/bookkeeping_hkbu_test"
+#train_df: "/root/datasets/meta-fas-experiment/protocol_1/test.csv"
+#bookkeeping_path: "datasets/bookkeeping_hkbu_test"
 
 #train_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
 #bookkeeping_path: "datasets/bookkeeping_protocol_1_val_infer"
+
+train_df: "/root/datasets/HKBU-V2/hkbu_01_no_industrial.csv"
+bookkeeping_path: "datasets/bookkeeping_hkbu_test_01_no_industrial"
 
 # deprecated
 dataset_root: "/root/datasets/siwm"
@@ -76,4 +79,4 @@ dataset_root: "/root/datasets/siwm"
 #dataset_root: "/root/datasets/oulu"
 #bookkeeping_path: "datasets/bookkeeping_oulu_test"
 
-weights: "logs/protocol_1/5-shot/pruned/resnet18/version_2/weights/epoch_14000.pth"
+weights: "logs/protocol_1/5-shot/pruned/resnet18/version_9/weights/epoch_6000.pth"

@@ -10,7 +10,7 @@ plot_inner_loop_loss: True
 plot_inner_loop_interval: 250
 
 image_size: 224  # size of input image
-save_weight_interval: 100  # will only save weights every n iterations
+save_weight_interval: 1000  # will only save weights every n iterations
 
 loss_coef:  # coefficients for losses
   clf_loss: 5.0
@@ -44,32 +44,33 @@ std:
 #  g: 50
 #  b: 50
 
-log_dir: "logs/protocol_1/10-shot/resnet18/"
+log_dir: "logs/protocol_1/10-shot/"
 pretrained: True
 
 # meta-learning hyperparameters
 ways: 2
 shots: 10
-tasks_per_step: 6
+tasks_per_step: 2
 fast_adaptation_steps: 5
 val_fast_adaptation_steps: 10
-iterations: 30000
+iterations: 20000
 lr: 0.01
-maml_lr: 0.001
+maml_lr: 0.0001
 seed: 1
 no_adaptation: False
 sample_count_factor: 2
 
 milestones:  # MultiStepLR scheduler params
-  - 500
+  - 10000
   - 20000
-  - 25000
 gamma: 0.1
 
 train_df: "/root/datasets/meta-fas-experiment/protocol_1/train_pruned.csv"
 val_df: "/root/datasets/meta-fas-experiment/protocol_1/val.csv"
 train_bookkeeping_path: "datasets/bookkeeping_protocol_1_train_pruned"
 val_bookkeeping_path: "datasets/bookkeeping_protocol_1_val"
+
+checkpoint: "/root/meta-fas/logs/protocol_1/10-shot/version_3/weights/epoch_29000.pth"
 
 # deprecated
 dataset_root: "/root/datasets/oulu"
